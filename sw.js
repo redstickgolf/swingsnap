@@ -1,4 +1,4 @@
-var C='swingsnap-v16';
+var C='swingsnap-v17';
 var F=['./','index.html','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','img/redstick-logo-for-black-bg.png','fonts/sora-latin.woff2','img/golfer.png','sounds/metronome_start.wav','sounds/metronome_impact.wav','sounds/wood_start.wav','sounds/wood_impact.wav','sounds/deskbell_start.wav','sounds/deskbell_impact.wav','sounds/marimba_start.wav','sounds/marimba_impact.wav','sounds/snap_start.wav','sounds/snap_impact.wav','sounds/digital_start.wav','sounds/digital_impact.wav'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(C).then(function(c){return c.addAll(F)}));self.skipWaiting()});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(k){return Promise.all(k.filter(function(x){return x!==C}).map(function(x){return caches.delete(x)}))}));self.clients.claim()});
