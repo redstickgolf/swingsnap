@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>SwingSnap</title>
+<meta name="theme-color" content="#0A0504">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="SwingSnap">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+@font-face{font-family:"Sora";font-style:normal;font-weight:600 800;font-display:swap;src:url("fonts/sora-latin.woff2") format("woff2")}
+/* Same look as PuttSnap: ink #0A0504, red #C8151D only as an accent, warm white #F4F1EC. Hairline borders, rounded cards, big numerals with small units,
+   bottom tab bar, accordion settings. Running screen: the whole screen is the track, the bar runs edge to edge, the text layer is turned 90 degrees. */
+:root{--bg:#0A0504;--surface:#141010;--surface-2:#1A1514;--hair:rgba(244,241,236,.10);--hair-2:rgba(244,241,236,.20);--fg:#F4F1EC;--muted:#9C9692;--accent:#C8151D;--accent-hi:#CB181C;--accent-lo:#A8060A;--on-accent:#FFFFFF;--warm:#F4F1EC;--ball:84px;--r-btn:14px;--r-card:16px;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic","Hiragino Sans","Yu Gothic",sans-serif;
+  --font-display:"Sora",system-ui,-apple-system,"Segoe UI",Roboto,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:radial-gradient(120% 70% at 50% 28%,#1a100f 0%,#0A0504 62%);color:var(--fg);font-family:var(--font);overflow:hidden;padding-block:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;overscroll-behavior:none;cursor:default}
+.ball{position:fixed;z-index:1000;pointer-events:none;top:calc(-0.5 * var(--ball));left:50%;width:var(--ball);height:var(--ball);margin-left:calc(-0.5 * var(--ball));border-radius:50%;background:#ece8e1;box-shadow:0 0 0 1px rgba(255,255,255,.10),0 12px 28px rgba(0,0,0,.8);transition:transform .12s ease-out,box-shadow .12s ease-out}
+.ball svg{position:absolute;inset:0;width:100%;height:100%;display:block;border-radius:50%}
+.ball.hit{transform:translateY(5px) scale(1.06);box-shadow:0 0 0 4px rgba(200,21,29,.55),0 12px 28px rgba(0,0,0,.8)}
+
+/* ---- panel ---- */
+.panel{position:fixed;inset:0;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:none;padding:calc(env(safe-area-inset-top,0px) + 20px) max(24px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 96px) max(24px,env(safe-area-inset-left,0px));scrollbar-width:none}
+.panel::-webkit-scrollbar{display:none}
+.home,.settings,.measure{display:flex;flex-direction:column;gap:14px;flex:1;width:100%;max-width:420px;margin-inline:auto}
+.topbar{display:flex;align-items:center;justify-content:space-between;min-height:46px}
+.home>.mode{margin-top:6px}
+.home>.preview{margin-top:auto}
+.home>.go{margin-top:auto}
+.measure>.go{margin-top:auto}
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1,h2{margin:0;font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:-.015em}
+.logo-link{display:block;align-self:flex-start;-webkit-tap-highlight-color:transparent}
+.logo{display:block;height:26px;width:auto;align-self:flex-start}
+.wordmark{margin:6px 0 0;align-self:flex-start;font:800 15.5px/1 var(--font-display);letter-spacing:-.02em;color:#FFFFFF;white-space:nowrap}
+.tip{margin:0;font-size:14px;line-height:1.75;color:var(--muted);text-align:center;text-wrap:balance;word-break:keep-all}
+.label{margin:0;font:600 11px/1 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.msg{margin:0;min-height:1.6em;font-size:14px;font-weight:700;color:var(--warm)}
+.vtitle{margin:0;font:700 28px/1.15 var(--font-display);letter-spacing:-.02em}
+.settings>.head,.measure>.head{margin-top:24px}
+button{-webkit-tap-highlight-color:transparent;transition:transform .4s cubic-bezier(.34,1.56,.64,1),background .18s,border-color .18s,color .18s,opacity .18s,box-shadow .18s}
+button:active{transform:scale(.955);transition-duration:.09s,.18s,.18s,.18s,.18s,.18s}
+button:focus-visible,a:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+
+/* ---- buttons ---- */
+.icon-btn{width:46px;height:46px;border-radius:14px;border:1px solid var(--hair-2);background:rgba(255,255,255,.03);color:var(--fg);display:grid;place-items:center;cursor:pointer;flex:none}
+.icon-btn:active{background:rgba(255,255,255,.09)}
+.go{width:100%;min-height:66px;border-radius:16px;border:0;background:linear-gradient(180deg,var(--accent-hi) 0%,var(--accent-lo) 100%);color:var(--on-accent);font:700 21px/1 var(--font-display);letter-spacing:.04em;cursor:pointer;box-shadow:0 12px 30px rgba(200,21,29,.32),inset 0 1px 0 rgba(255,255,255,.22)}
+.go:active{transform:scale(.97);box-shadow:0 6px 18px rgba(200,21,29,.3),inset 0 1px 0 rgba(255,255,255,.18)}
+.ghost{width:100%;min-height:48px;border-radius:var(--r-btn);border:1px solid var(--hair-2);background:transparent;color:var(--fg);font:600 15px var(--font);cursor:pointer}
+.savebox{display:grid;grid-template-columns:1fr 96px;gap:10px}
+.saveinput{min-width:0;min-height:48px;padding:0 14px;border-radius:var(--r-btn);border:1px solid var(--hair-2);background:var(--surface);color:var(--fg);font:500 15px var(--font);-webkit-user-select:text;user-select:text}
+.saveinput:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.savedlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.savedlist li{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.sv-use{min-width:0;min-height:52px;padding:8px 14px;border-radius:var(--r-btn);border:1px solid var(--hair-2);background:var(--surface);color:var(--fg);text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:3px}
+.sv-use[aria-pressed="true"]{border-color:var(--accent);background:rgba(200,21,29,.14)}
+.sv-use b{font:600 15px var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sv-use span{font:500 12px var(--font);color:var(--muted);font-variant-numeric:tabular-nums}
+.sv-del{min-width:52px;min-height:52px;border-radius:var(--r-btn);border:1px solid var(--hair-2);background:transparent;color:var(--muted);font:600 13px var(--font);cursor:pointer}
+.sv-empty{margin:0;font-size:13px;color:var(--muted)}
+.auto-hint{margin:0;text-align:center;font:700 15px/1.4 var(--font);color:var(--warm);display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 14px;border-radius:14px;border:1px solid rgba(200,21,29,.6);background:rgba(200,21,29,.14);word-break:keep-all;text-wrap:balance;animation:hintGlow 1.8s ease-in-out infinite}
+.auto-hint::before{content:"";flex:none;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px rgba(200,21,29,.9)}
+@keyframes hintGlow{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(200,21,29,0)}50%{opacity:.6;box-shadow:0 0 20px 2px rgba(200,21,29,.5)}}
+@media (prefers-reduced-motion:reduce){.auto-hint{animation:none}}
+
+/* ---- segmented control with a sliding thumb ---- */
+.mode,.pills{position:relative;display:flex;gap:4px;padding:4px;border:1px solid var(--hair);border-radius:16px;background:rgba(255,255,255,.025)}
+.pill{white-space:nowrap;flex:1 1 0;min-height:42px;padding-inline:6px;border-radius:12px;border:0;background:transparent;color:var(--muted);font:600 14px var(--font);cursor:pointer;position:relative;z-index:1}
+.pill[aria-pressed="true"]{color:#0A0504}
+.seg-thumb{position:absolute;top:4px;bottom:4px;left:0;width:0;border-radius:12px;background:var(--warm);z-index:0;pointer-events:none;transition:transform .28s cubic-bezier(.2,.8,.2,1),width .28s cubic-bezier(.2,.8,.2,1)}
+.langs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.lang-opt{min-height:48px;padding-inline:6px;border-radius:12px;border:1px solid var(--hair-2);background:transparent;color:var(--muted);font:600 14px var(--font);white-space:nowrap;cursor:pointer}
+.lang-opt[aria-pressed="true"]{background:var(--warm);color:#0A0504;border-color:transparent}
+
+/* ---- icon cards ---- */
+.sounds{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sounds.two{grid-template-columns:repeat(2,1fr)}
+.sounds.four{grid-template-columns:repeat(4,1fr)}
+.sounds.four .snd{min-height:84px;font-size:12px}
+.snd{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:90px;padding:10px 4px;border-radius:var(--r-card);border:1px solid var(--hair);background:var(--surface-2);color:var(--muted);font:600 13px var(--font);cursor:pointer}
+.snd svg{display:block}
+.snd[aria-pressed="true"]{background:rgba(200,21,29,.16);border-color:var(--accent);color:var(--fg);box-shadow:inset 0 0 22px rgba(200,21,29,.16)}
+.snd small{font:500 12px/1 var(--font);color:var(--muted);margin-top:-3px;font-variant-numeric:tabular-nums}
+.snd[aria-pressed="true"] small{color:var(--fg)}
+.snd .num{font:600 28px/1 var(--font-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+@keyframes pop{0%{transform:scale(.88)}100%{transform:scale(1)}}
+.snd.pop{animation:pop .36s cubic-bezier(.34,1.56,.64,1)}
+.acc-note{margin:2px 2px 0;font-size:12.5px;line-height:1.65;color:var(--muted);word-break:keep-all}
+
+/* ---- home numbers + preview ---- */
+.facts2{display:flex;justify-content:center;font-variant-numeric:tabular-nums}
+.fact{display:flex;flex-direction:column;align-items:center;gap:10px;padding:0 26px}
+.fl{font:600 10.5px/1 var(--font);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.fact strong,.stepval strong{font:600 40px/1 var(--font-display);letter-spacing:-.03em;white-space:nowrap;color:var(--warm)}
+.u{margin-left:3px;font:500 14px var(--font);letter-spacing:0;color:var(--muted)}
+#factTot{font-size:60px}
+.ratio-line{margin:-6px 0 0;text-align:center;font:500 13px/1.4 var(--font-display);letter-spacing:.06em;color:var(--muted);font-variant-numeric:tabular-nums}
+.secs-line{margin-top:-2px;color:var(--fg)}
+.preview{display:flex;align-items:center;justify-content:center;gap:14px}
+.pv-phone{position:relative;flex:none;width:92px;height:164px;padding:5px;border-radius:20px;border:1.5px solid var(--hair-2);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06)}
+.pv-track{position:relative;width:100%;height:100%;border-radius:15px;overflow:hidden;background:#0A0504;transition:box-shadow .15s}
+.pv-track.turn{box-shadow:inset 0 -30px 24px -16px rgba(200,21,29,.65)}
+.pv-bar{position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(180deg,#DC2229,var(--accent-lo));box-shadow:0 0 14px rgba(200,21,29,.55);will-change:transform}
+.pv-bar.hit{background:var(--fg);box-shadow:0 0 14px rgba(244,241,236,.5)}
+.pv-ball{position:absolute;top:-12px;left:50%;width:24px;height:24px;margin-left:-12px;border-radius:50%;background:radial-gradient(circle at 40% 68%,#fff 0%,#ebe6de 52%,#b4ada3 100%);box-shadow:0 4px 8px rgba(0,0,0,.6);transition:transform .12s ease-out}
+.pv-ball.hit{transform:translateY(2px) scale(1.14)}
+.pv-lab{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;font:600 11px/1.2 var(--font);letter-spacing:.04em;color:var(--muted);opacity:.45;transition:opacity .18s,color .18s;text-align:center}
+.pv-lab i{font-style:normal}
+.pv-lab svg{color:var(--accent)}
+.pv-lab.on{opacity:1;color:var(--fg)}
+.golfer{display:block;height:100px;width:auto}
+.arc{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--muted);font:600 12px/1.3 var(--font);text-align:center;word-break:keep-all}
+@media (max-height:700px){.preview{display:none}}
+@media (max-height:560px){.arc{display:none}}
+
+/* ---- tempo picker ---- */
+.stepper{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.stepper .icon-btn{width:60px;height:56px;font:500 26px/1 var(--font-display)}
+.stepval{display:flex;flex-direction:column;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+.stepval strong{font-size:36px}
+.stepval>span{color:var(--accent);font:700 12px var(--font);letter-spacing:.18em}
+@keyframes tick{from{transform:scale(1.07)}to{transform:none}}
+.tick{animation:tick .22s cubic-bezier(.34,1.56,.64,1)}
+.card-soon{border:1px dashed var(--hair-2);border-radius:var(--r-btn);padding:14px 16px}
+.card-soon h3{margin:0 0 4px;font:700 15px var(--font)}
+.card-soon p{margin:0;font-size:13px;line-height:1.6;color:var(--muted);word-break:keep-all}
+.card-soon .tag{display:inline-block;margin-left:6px;padding:2px 8px;border:1px solid var(--hair-2);border-radius:20px;font:600 11px var(--font);color:var(--muted);vertical-align:middle}
+
+/* ---- settings rows (accordion) ---- */
+.acc{border:1px solid var(--hair);border-radius:14px;background:var(--surface-2);overflow:hidden}
+.acc-h{width:100%;min-height:58px;display:flex;align-items:center;gap:10px;padding:0 16px;background:transparent;border:0;color:var(--fg);font:600 15px var(--font);cursor:pointer;text-align:left}
+.acc-t{flex:none}
+.acc-lang-t{display:inline-flex;align-items:center;gap:9px}
+.acc-lang-t .globe{flex:none;color:var(--accent)}
+.acc-v{flex:1;min-width:0;text-align:right;color:var(--muted);font:500 13px var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chev{flex:none;color:var(--muted);transition:transform .18s}
+.acc-h[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.acc-w{display:grid;grid-template-rows:0fr;visibility:hidden;transition:grid-template-rows .3s cubic-bezier(.2,.8,.2,1),visibility 0s .3s}
+.acc.open .acc-w{grid-template-rows:1fr;visibility:visible;transition:grid-template-rows .3s cubic-bezier(.2,.8,.2,1),visibility 0s 0s}
+.acc-b{min-height:0;overflow:hidden}
+.acc-i{display:flex;flex-direction:column;gap:12px;padding:4px 12px 16px;border-top:1px solid var(--hair)}
+.acc-link{display:flex;align-items:center;gap:10px;min-height:58px;padding:0 16px;border:1px solid var(--hair);border-radius:14px;background:var(--surface-2);color:var(--fg);font:600 15px var(--font);text-decoration:none;width:100%;text-align:left;cursor:pointer}
+.acc-link .acc-v{flex:1}
+.rs-banner{display:block;padding:18px 16px 16px;border:1px solid var(--hair);border-radius:14px;background:var(--surface-2);color:var(--fg);text-decoration:none}
+.rs-banner:active{transform:scale(.975);transition-duration:.09s}
+.kicker{margin:0 0 6px;font:600 10.5px/1 var(--font-display);letter-spacing:.26em;text-transform:uppercase;color:var(--accent)}
+.rs-banner .kicker{margin-bottom:10px}
+.rs-banner h3{margin:0 0 6px;font:700 17px/1.35 var(--font)}
+.rs-body{margin:0;font-size:13.5px;line-height:1.65;color:var(--muted);word-break:keep-all}
+.rs-sign{margin:12px 0 0;font:600 12px/1.4 var(--font-display);letter-spacing:.02em;color:var(--fg)}
+.rs-cta{display:flex;align-items:center;justify-content:space-between;margin-top:14px;min-height:44px;padding:0 16px;border-radius:12px;background:linear-gradient(180deg,var(--accent-hi) 0%,var(--accent-lo) 100%);color:#fff;font:700 14px var(--font)}
+.fine-note{margin:0;font-size:12px;line-height:1.6;color:var(--muted);word-break:keep-all}
+
+/* ---- tab bar ---- */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:center;padding:8px max(12px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 8px) max(12px,env(safe-area-inset-left,0px));background:rgba(12,8,7,.82);-webkit-backdrop-filter:blur(22px) saturate(1.3);backdrop-filter:blur(22px) saturate(1.3);border-top:1px solid var(--hair)}
+.tabbar-in{position:relative;display:flex;width:100%;max-width:420px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:54px;padding:6px 0 2px;background:transparent;border:0;color:var(--muted);font:600 11px/1 var(--font);letter-spacing:.02em;cursor:pointer}
+.tab svg{display:block;transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.tab[aria-selected="true"]{color:var(--fg)}
+.tab[aria-selected="true"] svg{transform:translateY(-1px) scale(1.1)}
+.tab-ind{position:absolute;top:-9px;left:0;width:30px;height:3px;border-radius:0 0 3px 3px;background:var(--accent);box-shadow:0 2px 14px rgba(200,21,29,.75);transition:transform .42s cubic-bezier(.34,1.3,.64,1)}
+
+/* ---- guide sheet ---- */
+.scrim{position:fixed;inset:0;z-index:25;background:rgba(0,0,0,.6)}
+.sheet{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);z-index:30;max-width:420px;margin-inline:auto;padding:16px;border-radius:20px;background:rgba(28,22,21,.94);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid var(--hair-2);box-shadow:0 22px 54px rgba(0,0,0,.65);display:flex;flex-direction:column;gap:12px}
+.manual{background:#1c1615;-webkit-backdrop-filter:none;backdrop-filter:none;z-index:45;top:calc(env(safe-area-inset-top,0px) + 64px);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);max-width:560px;gap:12px;overflow:hidden}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.howto-title{font:700 20px/1.2 var(--font-display)}
+.sheet-x{width:40px;height:40px;border-radius:12px;border:1px solid var(--hair-2);background:transparent;color:var(--fg);font:500 20px/1 var(--font);cursor:pointer;flex:none}
+.man-quick{display:flex;flex-direction:column;gap:12px;padding:2px 2px 14px;margin-bottom:6px;border-bottom:1px solid var(--hair)}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.steps li{display:flex;gap:12px;align-items:flex-start;font:400 14px/1.6 var(--font);color:var(--fg);word-break:keep-all}
+.steps i{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:700 12px/1 var(--font-display);font-style:normal;color:var(--fg);background:rgba(200,21,29,.22);border:1px solid var(--accent);margin-top:1px}
+.man-body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px}
+.man-body details{border:1px solid var(--hair);border-radius:14px;background:rgba(255,255,255,.03)}
+.man-body summary{list-style:none;cursor:pointer;padding:14px 16px;font:700 15px/1.4 var(--font);display:flex;align-items:center;gap:12px;word-break:keep-all}
+.man-body summary::-webkit-details-marker{display:none}
+.man-body summary::after{content:"+";margin-left:auto;flex:none;font:500 20px/1 var(--font);color:var(--muted)}
+.man-body details[open] summary::after{content:"\2212"}
+.man-body details[open] summary{color:var(--warm)}
+.man-c{padding:0 16px 14px;font:400 14px/1.75 var(--font);color:var(--fg);word-break:keep-all}
+
+/* ---- splash ---- */
+.splash{position:fixed;inset:0;z-index:3000;background:#0A0504;display:grid;place-items:center}
+.splash img{height:36px;width:auto;animation:splashIn .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes splashIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+
+/* ---- running screen ---- */
+#run{position:fixed;inset:0;z-index:40;display:none;overflow:hidden;background:radial-gradient(120% 70% at 50% 28%,#1a100f 0%,#0A0504 62%)}
+#run.on{display:block}
+.bar{position:absolute;left:0;right:0;top:0;height:14px;background:linear-gradient(180deg,#DC2229 0%,var(--accent-lo) 100%);box-shadow:0 0 26px rgba(200,21,29,.5);will-change:transform;z-index:2}
+.bar.hit{background:var(--fg);box-shadow:0 0 26px rgba(244,241,236,.5)}
+.cue{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;box-shadow:inset 0 0 130px 46px rgba(200,21,29,.95)}
+.lights{position:absolute;z-index:4;left:20%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:16px;pointer-events:none;opacity:0;transition:opacity .3s ease}
+.lights.show{opacity:1}
+.lights i{width:30px;height:30px;border-radius:50%;box-sizing:border-box;border:1.5px solid rgba(244,241,236,.22);background:transparent;transition:background .12s,border-color .12s}
+.lights .r.on{background:#E0383E;border-color:#E0383E}
+.lights .y.on{background:#E9B520;border-color:#E9B520}
+.lights .g.on{background:#33B868;border-color:#33B868}
+.rot{position:absolute;left:0;top:0;width:100vh;width:100dvh;height:100vw;transform-origin:0 0;transform:translateX(100vw) rotate(90deg);z-index:3;pointer-events:none}
+.rlogo{position:absolute;left:46px;top:18px;height:20px;width:auto;opacity:.9}
+#stop{position:absolute;right:18px;top:12px;pointer-events:auto;width:auto;min-height:44px;padding:0 14px;border:0;background:transparent;box-shadow:none;color:var(--muted);font:500 13px/1.3 var(--font);letter-spacing:0;opacity:.32}
+
+/* ---- Japanese / Chinese: break between characters ---- */
+html:lang(ja) *{word-break:normal!important;overflow-wrap:anywhere;line-break:strict}
+</style>
+</head>
+<body>
+<div id="splash" class="splash" aria-hidden="true"><img alt="" src="img/redstick-logo-for-black-bg.png"></div>
+
+<main id="panel" class="panel">
+  <!-- PRACTICE -->
+  <div id="home" class="home">
+    <div class="topbar">
+      <a id="logoLink" class="logo-link" href="https://www.amazon.com/dp/B0FZKSFRWL" target="_blank" rel="noopener" aria-label="Redstick"><img class="logo" src="img/redstick-logo-for-black-bg.png" alt="redstick"></a>
+      <p class="wordmark" aria-label="SwingSnap">SwingSnap</p>
+    </div>
+    <div class="mode" id="levels" role="group" aria-label="pace">
+      <button class="pill" type="button" data-level="0" aria-pressed="false"><span data-t="lv_gen"></span></button>
+      <button class="pill" type="button" data-level="1" aria-pressed="false"><span data-t="lv_adv"></span></button>
+      <button class="pill" type="button" data-level="2" aria-pressed="false"><span data-t="lv_pro"></span></button>
+    </div>
+    <div class="arc" aria-hidden="true">
+      <img class="golfer" src="img/golfer.png" alt="" height="100">
+      <span data-t="arcL"></span>
+    </div>
+    <div class="preview" aria-hidden="true">
+      <span id="pvBack" class="pv-lab"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg><i data-t="back"></i></span>
+      <div class="pv-phone"><div id="pvTrack" class="pv-track"><div id="pvBar" class="pv-bar"></div><div id="pvBall" class="pv-ball"></div></div></div>
+      <span id="pvFwd" class="pv-lab"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg><i data-t="down"></i></span>
+    </div>
+    <div class="facts2"><div class="fact"><span class="fl" data-t="totL"></span><div><strong id="factTot">1.30</strong><span class="u" data-t="sec"></span></div></div></div>
+    <p class="ratio-line secs-line" id="factSplit"></p>
+    <p class="ratio-line" id="factRatio"></p>
+    <p class="tip" id="homeTip"></p>
+    <p id="autoHint" class="auto-hint" hidden></p>
+    <button id="go" class="go" type="button" data-t="start"></button>
+  </div>
+
+  <!-- MAKE MY TEMPO -->
+  <div id="measure" class="measure" hidden>
+    <div class="head"><h1 class="vtitle" data-t="makeH"></h1></div>
+    <p class="label" data-t="quick"></p>
+    <div class="sounds" role="group" aria-label="pace">
+      <button class="snd" type="button" data-preset="0"><svg viewBox="0 0 40 40" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 30a14 14 0 0 1 28 0"/><path d="M20 30 11 17"/><circle cx="20" cy="30" r="2" fill="currentColor"/><path d="M10 14l1 1M20 9v2M30 14l-1 1"/></svg><span data-t="lv_gen"></span><small>1.30</small></button>
+      <button class="snd" type="button" data-preset="1"><svg viewBox="0 0 40 40" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 30a14 14 0 0 1 28 0"/><path d="M20 30 20 17"/><circle cx="20" cy="30" r="2" fill="currentColor"/><path d="M10 14l1 1M20 9v2M30 14l-1 1"/></svg><span data-t="lv_adv"></span><small>1.15</small></button>
+      <button class="snd" type="button" data-preset="2"><svg viewBox="0 0 40 40" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 30a14 14 0 0 1 28 0"/><path d="M20 30 29 17"/><circle cx="20" cy="30" r="2" fill="currentColor"/><path d="M10 14l1 1M20 9v2M30 14l-1 1"/></svg><span data-t="lv_pro"></span><small>1.00</small></button>
+    </div>
+    <p class="label" data-t="totL"></p>
+    <div class="stepper">
+      <button id="tMinus" class="icon-btn" type="button" aria-label="-0.01">&minus;</button>
+      <div class="stepval"><strong id="draftTot"></strong><span id="draftSplit"></span></div>
+      <button id="tPlus" class="icon-btn" type="button" aria-label="+0.01">+</button>
+    </div>
+    <p class="fine-note" data-t="totP"></p>
+    <p class="label" data-t="ratioL"></p>
+    <div class="stepper">
+      <button id="rMinus" class="icon-btn" type="button" aria-label="-0.1">&minus;</button>
+      <div class="stepval"><strong id="draftRatio"></strong><span data-t="back"></span></div>
+      <button id="rPlus" class="icon-btn" type="button" aria-label="+0.1">+</button>
+    </div>
+    <p class="fine-note" data-t="ratioP"></p>
+    <div class="savebox">
+      <input id="saveName" class="saveinput" type="text" maxlength="20" autocomplete="off">
+      <button id="saveAdd" class="ghost" type="button" data-t="saveBtn"></button>
+    </div>
+    <p id="saveMsg" class="msg" aria-live="polite"></p>
+    <p class="label"><span data-t="savedTitle"></span> <span id="savedCount"></span></p>
+    <ul id="savedList" class="savedlist"></ul>
+    <div class="card-soon"><h3><span data-t="filmH"></span><span class="tag" data-t="soon"></span></h3><p data-t="filmP"></p></div>
+    <button id="practiceBtn" class="go" type="button" data-t="practice"></button>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="settings" class="settings" hidden>
+    <div class="head"><h1 class="vtitle" data-t="settingsTitle"></h1></div>
+
+    <section class="acc">
+      <button class="acc-h" type="button" aria-expanded="false" aria-controls="acc-lang"><span class="acc-t acc-lang-t"><svg class="globe" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span data-t="langT"></span></span><span class="acc-v" id="accv-lang"></span><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="acc-w" id="acc-lang"><div class="acc-b"><div class="acc-i">
+        <div class="langs" role="group" aria-label="language">
+          <button class="lang-opt" type="button" data-lang="en" lang="en" aria-pressed="false">English</button>
+          <button class="lang-opt" type="button" data-lang="ja" lang="ja" aria-pressed="false">日本語</button>
+          <button class="lang-opt" type="button" data-lang="ko" lang="ko" aria-pressed="false">한국어</button>
+        </div>
+      </div></div></div>
+    </section>
+
+    <section class="acc">
+      <button class="acc-h" type="button" aria-expanded="false" aria-controls="acc-sound"><span class="acc-t acc-lang-t"><svg class="globe" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.6v6.8h4.2L13.4 21V3L7.2 8.6z"/><path d="M16.8 8.4a5.2 5.2 0 0 1 0 7.2"/><path d="M19.8 5.4a9.4 9.4 0 0 1 0 13.2"/></svg><span data-t="soundT"></span></span><span class="acc-v" id="accv-sound"></span><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="acc-w" id="acc-sound"><div class="acc-b"><div class="acc-i">
+        <div class="sounds" role="group" aria-label="sound">
+          <button class="snd" type="button" data-sound="metronome" aria-pressed="false"><svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 35 16 6h8l6 29z"/><path d="M20 30 28 11"/><circle cx="28.500" cy="10" r="3" fill="currentColor"/><path d="M7 35h26"/></svg><span data-t="s_metronome"></span></button>
+          <button class="snd" type="button" data-sound="digital" aria-pressed="false"><svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="20" cy="23" r="12"/><path d="M20 23v-7"/><path d="M16 6h8"/><path d="M20 6v5"/></svg><span data-t="s_digital"></span></button>
+          <button class="snd" type="button" data-sound="deskbell" aria-pressed="false"><svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 27a12 12 0 0 1 24 0z"/><path d="M5 31h30"/><path d="M20 12v3M17 11h6"/></svg><span data-t="s_deskbell"></span></button>
+          <button class="snd" type="button" data-sound="snap" aria-pressed="false"><svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6v6M10 12l4 4M30 12l-4 4M5 24h6M29 24h6"/><circle cx="20" cy="24" r="4.500" fill="currentColor" stroke="none"/><path d="M14 35c2-3 10-3 12 0" opacity="0.5"/></svg><span data-t="s_snap"></span></button>
+          <button class="snd" type="button" data-sound="marimba" aria-pressed="false"><svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="9" width="28" height="6" rx="2"/><rect x="9" y="18" width="22" height="6" rx="2"/><rect x="12" y="27" width="16" height="6" rx="2"/></svg><span data-t="s_marimba"></span></button>
+          <button class="snd" type="button" data-sound="wood" aria-pressed="false"><svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="19" width="26" height="14" rx="5"/><path d="M12 25h5M21 25h5M12 29h8"/><path d="M33 5 22 16"/><circle cx="34" cy="4.500" r="2.600" fill="currentColor"/></svg><span data-t="s_wood"></span></button>
+        </div>
+      </div></div></div>
+    </section>
+
+    <section class="acc">
+      <button class="acc-h" type="button" aria-expanded="false" aria-controls="acc-cue"><span class="acc-t acc-lang-t"><svg class="globe" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg><span data-t="cueT"></span></span><span class="acc-v" id="accv-cue"></span><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="acc-w" id="acc-cue"><div class="acc-b"><div class="acc-i">
+        <div class="sounds two" role="group" aria-label="cue pattern">
+          <button class="snd" type="button" data-cue="2" aria-pressed="false"><svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="3.5" fill="currentColor"/><circle cx="31" cy="20" r="3.5" fill="currentColor"/><path d="M15 20h10" stroke-dasharray="1 5"/></svg><span data-t="c2"></span></button>
+          <button class="snd" type="button" data-cue="3" aria-pressed="false"><svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="20" r="3.3" fill="currentColor"/><circle cx="20" cy="20" r="3.3" fill="currentColor"/><circle cx="34" cy="20" r="3.3" fill="currentColor"/></svg><span data-t="c3"></span></button>
+        </div>
+        <p class="acc-note" data-t="cueP"></p>
+      </div></div></div>
+    </section>
+
+    <section class="acc">
+      <button class="acc-h" type="button" aria-expanded="false" aria-controls="acc-int"><span class="acc-t acc-lang-t"><svg class="globe" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.3" r="8"/><path d="M12 9v4.6l3 1.8"/><path d="M9.5 2.8h5"/></svg><span data-t="intT"></span></span><span class="acc-v" id="accv-int"></span><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="acc-w" id="acc-int"><div class="acc-b"><div class="acc-i">
+        <div class="sounds four" role="group" aria-label="interval">
+          <button class="snd" type="button" data-int="0" aria-pressed="false"><b class="num">0</b><span data-t="nonstop"></span></button>
+          <button class="snd" type="button" data-int="3" aria-pressed="false"><b class="num">3</b><span data-t="sec"></span></button>
+          <button class="snd" type="button" data-int="5" aria-pressed="false"><b class="num">5</b><span data-t="sec"></span></button>
+          <button class="snd" type="button" data-int="8" aria-pressed="false"><b class="num">8</b><span data-t="sec"></span></button>
+        </div>
+        <p class="acc-note" data-t="intP"></p>
+      </div></div></div>
+    </section>
+
+    <section class="acc">
+      <button class="acc-h" type="button" aria-expanded="false" aria-controls="acc-flash"><span class="acc-t acc-lang-t"><svg class="globe" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.2 3 4 13.6h7L9.8 21 20 10.4h-7z"/></svg><span data-t="flashT"></span></span><span class="acc-v" id="accv-flash"></span><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="acc-w" id="acc-flash"><div class="acc-b"><div class="acc-i">
+        <div class="sounds two" role="group" aria-label="transition flash">
+          <button class="snd" type="button" data-flash="on" aria-pressed="false"><svg viewBox="0 0 40 40" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="7" width="30" height="26" rx="6"/><rect x="11" y="13" width="18" height="14" rx="3" fill="currentColor" opacity="0.35" stroke="none"/></svg><span data-t="on"></span></button>
+          <button class="snd" type="button" data-flash="off" aria-pressed="false"><svg viewBox="0 0 40 40" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="20" cy="20" r="12"/><path d="M12 28 28 12"/></svg><span data-t="off"></span></button>
+        </div>
+        <p class="acc-note" data-t="flashP"></p>
+      </div></div></div>
+    </section>
+
+    <button id="manualRow" class="acc-link" type="button"><span class="acc-lang-t"><svg class="globe" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3.8h7.2a2.2 2.2 0 0 1 2.2 2.2v15.2a2.2 2.2 0 0 0-2.2-2.2H3z"/><path d="M21 3.8h-7.2a2.2 2.2 0 0 0-2.2 2.2v15.2a2.2 2.2 0 0 1 2.2-2.2H21z"/></svg><span data-t="manualT"></span></span><span class="acc-v"></span><svg class="chev" style="transform:rotate(-90deg)" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+
+    <a id="buyLink" class="rs-banner" href="https://www.amazon.com/dp/B0FZKSFRWL" target="_blank" rel="noopener">
+      <p class="kicker">Redstick MINI Solo</p>
+      <h3 data-t="bn_title"></h3>
+      <p class="rs-body" data-t="bn_body"></p>
+      <p class="rs-sign">Snap on. Line up. Trust it. Redstick.</p>
+      <span class="rs-cta"><span data-t="bn_cta"></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+    <p class="fine-note" data-t="safe"></p>
+    <p class="fine-note" data-t="src"></p>
+  </div>
+</main>
+
+<nav id="tabbar" class="tabbar" aria-label="Main">
+  <div class="tabbar-in" role="tablist">
+    <button class="tab" type="button" role="tab" data-tab="home" aria-selected="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z" fill="currentColor"/></svg><span data-t="tabP"></span></button>
+    <button class="tab" type="button" role="tab" data-tab="measure" aria-selected="false"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.500 21 10.800 4h2.400L15.500 21z"/><path d="M12 16 16 7"/><circle cx="16.500" cy="6.200" r="1.500" fill="currentColor"/><path d="M6 21h12"/></svg><span data-t="tabT"></span></button>
+    <button class="tab" type="button" role="tab" data-tab="settings" aria-selected="false"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span data-t="tabS"></span></button>
+    <i class="tab-ind" aria-hidden="true"></i>
+  </div>
+</nav>
+
+<div id="scrim" class="scrim" hidden></div>
+<div id="manual" class="sheet manual" role="dialog" aria-modal="true" aria-labelledby="manualTitle" hidden>
+  <div class="sheet-head"><strong id="manualTitle" class="howto-title" data-t="manualT"></strong><button id="manualX" class="sheet-x" type="button" aria-label="close">&times;</button></div>
+  <div id="manualBody" class="man-body"></div>
+</div>
+
+<div id="ball" class="ball" aria-hidden="true"></div>
+
+<div id="run" aria-hidden="true">
+  <div class="cue" id="cue" aria-hidden="true"></div>
+  <div class="bar" id="bar"></div>
+  <div class="lights" id="lights" aria-hidden="true"><i class="r"></i><i class="y"></i><i class="g"></i></div>
+  <div class="rot">
+    <img class="rlogo" src="img/redstick-logo-for-black-bg.png" alt="">
+    <button id="stop" type="button" data-t="stop"></button>
+  </div>
+</div>
+
+<script>
+(function(){
+var I18N={
+en:{sec:'sec',start:'START',stop:'Stop',tabP:'Practice',tabT:'Tempo',tabS:'Settings',
+ lv_gen:'General',lv_adv:'Advanced',lv_pro:'Pro avg. (ref.)',
+ back:'Backswing',down:'Downswing',def:'Backswing = start to top · Downswing = top to impact',
+ homeTip:'Place the phone where a club cannot hit it.',
+ autoHint:'Lay the phone flat to start automatically',
+ totL:'Total time',ratioL:'Ratio',
+ totP:'Start of swing to impact. Hold + or − to change quickly. Your setting is remembered.',
+ ratioP:'Backswing : downswing. 3:1 is a commonly used reference; measured ratios vary by player and method. With 2 beats the ratio only sets where the bar turns.',
+ quick:'Pick a pace',makeH:'Make my tempo',practice:'Practice this tempo',
+ savedTitle:'Saved tempos',saveBtn:'Save',namePh:'Name (optional)',defName:'My tempo ',noSaved:'No saved tempos yet.',fullMsg:'All 5 slots are full. Delete one to save.',savedMsg:'Saved.',del:'Delete',
+ filmH:'Film & measure',soon:'Coming soon',filmP:'Film your swing, mark start, top and impact, and see your own times. Then practice at that tempo.',
+ settingsTitle:'Settings',langT:'Language',soundT:'Sound',cueT:'Cue pattern',intT:'Time between swings',nonstop:'Non-stop',cw:'Wedge',ci:'Iron',cd:'Driver',arcL:'Wedge · Iron · Driver full swing',flashT:'Transition flash',on:'On',off:'Off',
+ s_metronome:'Metronome',s_wood:'Wood',s_deskbell:'Desk bell',s_marimba:'Marimba',s_snap:'Snap',s_digital:'Start beep',
+ c2:'2 beats',c3:'3 beats',cueP:'2 beats: sounds at start and impact; the bar shows the top. 3 beats: also a sound at the top. Try 3 beats if the transition timing is hard to catch.',
+ intP:'Time to reset before the next swing; the traffic light counts down the last seconds. Non-stop: the next swing starts right at impact, like a metronome.',
+ flashP:'The screen edge glows red at the transition (top of the swing), easy to catch in your peripheral vision.',
+ manualT:'Guide',bn_title:'Tempo set. Next, your face.',bn_body:'This app needs no extra gear. If you would like an easy face-angle reference on your irons and wedges, Redstick MINI Solo snaps on magnetically.',bn_cta:'See on Amazon',
+ safe:'Take it easy and stop if anything hurts. Not medical advice. Place the phone where a club cannot hit it. Bluetooth earbuds can add delay; use the phone speaker or a wired headset.',
+ src:'Reference: Grober & Cholewicki (2006), Grober (2010).',
+ qTitle:'How to use',
+ q:['Place the phone flat on the ground, or stand it where a club cannot reach. Turn the volume up.','Press Start, or just lay the phone flat: it starts by itself. Lift it to stop.','Listen to the rhythm: a sound at start and impact (and at the top with 3 beats). You do not have to hit exactly on the last sound.','Watch the traffic light: red, yellow, then green. At green the next swing starts.'],
+ m:[['What is tempo?','Tempo is how a swing is timed: how long it takes from the start of the swing to impact, and how that time splits between backswing and downswing.'],
+ ['Total time and ratio','Total 1.30 s with a 3:1 ratio means about 0.98 s backswing and 0.33 s downswing. The ratio only says how the time is shared.'],
+ ['Where does it start and end?','Here, backswing is the start of the swing to the top, and downswing is the top to impact. Other studies and apps use other definitions, so numbers cannot be compared directly.'],
+ ['Is 3:1 the right ratio?','No. It is a commonly used reference. In measurements of strong players the ratio ranged roughly from 2.4 to 3.4, and it differs between studies and methods.'],
+ ['Faster is better?','No. In one study the player with the fastest downswing was not the fastest club speed. Use a pace you can repeat comfortably.'],
+ ['Does tempo change by club?','In small studies of skilled players, total time and downswing time were about the same across driver, irons and wedges. So this app has one setting for all clubs; change it if you swing differently.'],
+ ['What this app can and cannot do','It plays a steady practice rhythm. It does not measure your swing, judge it, or promise better distance or accuracy.'],
+ ['Safety','Place the phone out of the club path, take it easy, stop if anything hurts. Not medical advice.']]},
+ko:{sec:'초',start:'시작',stop:'정지',tabP:'연습',tabT:'템포',tabS:'설정',
+ lv_gen:'일반',lv_adv:'상급',lv_pro:'프로 평균(참고)',
+ back:'백스윙',down:'다운스윙',def:'백스윙 = 시작~탑 · 다운스윙 = 탑~임팩트',
+ homeTip:'클럽이 닿지 않는 곳에 폰을 두세요.',
+ autoHint:'폰을 바닥에 평평하게 놓으면 자동으로 시작해요',
+ totL:'전체 시간',ratioL:'비율',
+ totP:'스윙 시작부터 임팩트까지. +/−를 누르고 있으면 빠르게 바뀝니다. 설정은 기억돼요.',
+ ratioP:'백스윙 : 다운스윙. 3:1은 흔히 쓰는 기준일 뿐이고, 실제 측정 비율은 사람과 측정 방법에 따라 다릅니다. 2박일 때는 화면 바가 방향을 바꾸는 지점만 정합니다.',
+ quick:'바로 고르기',makeH:'내 템포 만들기',practice:'이 템포로 연습',
+ savedTitle:'저장한 템포',saveBtn:'저장',namePh:'이름 (선택)',defName:'내 템포 ',noSaved:'아직 저장한 템포가 없어요.',fullMsg:'5개가 가득 찼어요. 하나를 지우고 저장하세요.',savedMsg:'저장했어요.',del:'삭제',
+ filmH:'찍어서 내 템포 확인',soon:'준비 중',filmP:'스윙을 촬영해 시작·탑·임팩트를 찍으면 내 시간을 볼 수 있어요. 그 템포로 바로 연습해요.',
+ settingsTitle:'설정',langT:'언어 · Language',soundT:'소리',cueT:'소리 구성',intT:'스윙 사이 간격',nonstop:'바로',cw:'웨지',ci:'아이언',cd:'드라이버',arcL:'웨지 · 아이언 · 드라이버 풀스윙',flashT:'전환 번쩍임',on:'켬',off:'끔',
+ s_metronome:'메트로놈',s_wood:'나무',s_deskbell:'데스크벨',s_marimba:'마림바',s_snap:'스냅',s_digital:'출발음',
+ c2:'2박',c3:'3박',cueP:'2박: 시작과 임팩트에 소리가 나고 탑은 화면 바로 확인합니다. 3박: 탑에서도 소리가 납니다. 전환 타이밍이 잘 안 잡히면 3박을 써 보세요.',
+ intP:'다음 스윙 전에 자세를 다시 잡는 시간이고, 마지막 몇 초는 신호등이 알려 줘요. 바로: 임팩트 소리가 나자마자 다음 스윙이 이어지는 메트로놈 방식입니다.',
+ flashP:'전환(탑) 순간 화면 가장자리가 붉게 번쩍여 주변시로도 보입니다.',
+ manualT:'설명서',bn_title:'템포는 잡았어요. 이제 페이스예요.',bn_body:'템포 연습은 폰 하나면 충분해요. 아이언·웨지 페이스에 자석으로 붙이는 페이스앵글 확인 스틱, 레드스틱 미니 솔로도 있어요.',bn_cta:'레드스틱 스토어 보기',
+ safe:'무리하지 마시고 아프면 멈추세요. 의학 조언이 아닙니다. 클럽이 닿지 않는 곳에 폰을 두세요. 블루투스 이어폰은 소리가 늦을 수 있으니 폰 스피커나 유선을 쓰세요.',
+ src:'참고: Grober & Cholewicki (2006), Grober (2010).',
+ qTitle:'이렇게 써요',
+ q:['폰을 바닥에 평평하게 놓거나, 클럽이 닿지 않는 곳에 세워 두세요. 볼륨을 키우세요.','시작을 누르거나 폰을 바닥에 평평하게 놓으면 자동으로 시작돼요. 폰을 들면 멈춰요.','리듬을 들어요: 시작과 임팩트에서 소리가 나고(3박이면 탑에서도), 마지막 소리에 정확히 맞출 필요는 없어요.','신호등을 보세요: 빨강, 노랑, 그리고 초록. 초록이 켜지는 순간 다음 스윙이 시작돼요.'],
+ m:[['템포란?','스윙의 시간 배분입니다. 스윙 시작부터 임팩트까지 걸리는 시간과, 그 시간이 백스윙과 다운스윙으로 어떻게 나뉘는지를 말해요.'],
+ ['전체 시간과 비율','전체 1.30초에 비율 3:1이면 백스윙 약 0.98초, 다운스윙 약 0.33초입니다. 비율은 시간을 어떻게 나누는지만 알려 줘요.'],
+ ['어디서 어디까지?','이 앱에서 백스윙은 스윙 시작~탑, 다운스윙은 탑~임팩트입니다. 연구나 다른 앱은 정의가 달라서 숫자를 그대로 비교할 수 없어요.'],
+ ['3:1이 정답인가요?','아니요. 흔히 쓰는 기준일 뿐입니다. 잘 치는 선수들을 측정한 값은 대략 2.4~3.4로 퍼져 있고, 연구와 측정 방법에 따라 달라요.'],
+ ['빠를수록 좋은가요?','아니요. 한 연구에서 다운스윙이 가장 빠른 선수가 클럽 속도가 가장 빠르지는 않았어요. 편하게 반복할 수 있는 속도로 연습하세요.'],
+ ['클럽마다 템포가 다른가요?','숙련자를 측정한 소규모 연구에서 드라이버·아이언·웨지의 전체 시간과 다운스윙 시간은 거의 같았어요. 그래서 이 앱은 클럽 구분 없이 설정 하나를 쓰고, 다르게 치고 싶으면 직접 바꾸면 됩니다.'],
+ ['이 앱이 하는 일과 못 하는 일','일정한 연습용 리듬을 들려줍니다. 스윙을 측정·판정하지 않고, 비거리나 정확도 향상을 약속하지 않아요.'],
+ ['안전','폰은 클럽이 닿지 않는 곳에 두고, 무리하지 말고, 아프면 멈추세요. 의학 조언이 아닙니다.']]},
+ja:{sec:'秒',start:'スタート',stop:'ストップ',tabP:'練習',tabT:'テンポ',tabS:'設定',
+ lv_gen:'一般',lv_adv:'上級',lv_pro:'プロ平均(参考)',
+ back:'バックスイング',down:'ダウンスイング',def:'バックスイング＝始動〜トップ ・ ダウンスイング＝トップ〜インパクト',
+ homeTip:'クラブが当たらない場所にスマホを置いてください。',
+ autoHint:'スマホを平らに置くと自動で始まります',
+ totL:'合計時間',ratioL:'比率',
+ totP:'始動からインパクトまで。+/−を長押しで素早く変更。設定は保存されます。',
+ ratioP:'バックスイング：ダウンスイング。3:1はよく使われる目安で、実測の比は人や測定方法で異なります。2拍のときはバーが折り返す位置だけが変わります。',
+ quick:'ペースを選ぶ',makeH:'マイテンポを作る',practice:'このテンポで練習',
+ savedTitle:'保存したテンポ',saveBtn:'保存',namePh:'名前（任意）',defName:'自分のテンポ ',noSaved:'保存したテンポはまだありません。',fullMsg:'5件すべて使用中です。1つ削除してから保存してください。',savedMsg:'保存しました。',del:'削除',
+ filmH:'撮影して測る',soon:'準備中',filmP:'スイングを撮影して始動・トップ・インパクトを指定すると、自分の時間がわかります。そのテンポで練習できます。',
+ settingsTitle:'設定',langT:'言語 · Language',soundT:'サウンド',cueT:'音の構成',intT:'スイング間隔',nonstop:'連続',cw:'ウェッジ',ci:'アイアン',cd:'ドライバー',arcL:'ウェッジ・アイアン・ドライバー フルスイング',flashT:'切り返し点滅',on:'オン',off:'オフ',
+ s_metronome:'メトロノーム',s_wood:'ウッド',s_deskbell:'卓上ベル',s_marimba:'マリンバ',s_snap:'スナップ',s_digital:'スタート音',
+ c2:'2拍',c3:'3拍',cueP:'2拍：始動とインパクトで音が鳴り、トップは画面のバーで確認。3拍：トップでも音が鳴ります。切り返しのタイミングがつかみにくいときは3拍をお試しください。',
+ intP:'次のスイングの前に構えを整える時間で、最後の数秒は信号が知らせます。連続：インパクト音の直後に次のスイングが始まる、メトロノーム方式です。',
+ flashP:'切り返し（トップ）の瞬間に画面の縁が赤く光り、周辺視野でも見えます。',
+ manualT:'ガイド',bn_title:'テンポは整いました。次はフェース。',bn_body:'テンポ練習はスマホ1つでOK。アイアン・ウェッジのフェースに磁石で付けられる、フェース角の目安のレッドスティック ミニソロもあります。',bn_cta:'Amazonで見る(米国)',
+ safe:'無理せず、痛みがあれば中止してください。医学的助言ではありません。クラブが当たらない場所にスマホを置いてください。Bluetoothイヤホンは音が遅れることがあります。',
+ src:'参考：Grober & Cholewicki (2006), Grober (2010)。',
+ qTitle:'使い方',
+ q:['スマホを床に平らに置くか、クラブが届かない場所に立ててください。音量を上げましょう。','スタートを押すか、スマホを平らに置くと自動で始まります。持ち上げると止まります。','リズムを聞きます：始動とインパクトで音が鳴ります（3拍ならトップでも）。最後の音にぴったり合わせる必要はありません。','信号を見ます：赤、黄、そして緑。緑になった瞬間に次のスイングが始まります。'],
+ m:[['テンポとは？','スイングの時間配分です。始動からインパクトまでの時間と、それがバックスイングとダウンスイングにどう分かれるかを指します。'],
+ ['合計時間と比率','合計1.30秒で比率3:1なら、バックスイング約0.98秒、ダウンスイング約0.33秒です。比率は時間の分け方だけを示します。'],
+ ['どこからどこまで？','このアプリでは、バックスイングは始動〜トップ、ダウンスイングはトップ〜インパクトです。研究や他のアプリは定義が違うため、数字をそのまま比べられません。'],
+ ['3:1が正解？','いいえ。よく使われる目安です。上手な選手の測定では比はおよそ2.4〜3.4にばらつき、研究や方法で異なります。'],
+ ['速いほどいい？','いいえ。ある研究では、ダウンスイングが最も速い選手のクラブ速度が最速ではありませんでした。楽に繰り返せるペースで練習しましょう。'],
+ ['クラブで変わる？','上級者の小規模な研究では、ドライバー・アイアン・ウェッジで合計時間とダウンスイング時間はほぼ同じでした。そのためこのアプリはクラブの区別なく設定を1つだけ使い、違うペースで打ちたいときは自分で変えます。'],
+ ['できること・できないこと','一定の練習用リズムを鳴らします。スイングの測定や判定はせず、飛距離や精度の向上は約束しません。'],
+ ['安全','クラブが当たらない場所に置き、無理せず、痛みがあれば中止してください。医学的助言ではありません。']]}
+};
+var $=function(i){return document.getElementById(i)};
+var LEVELS=[1.30,1.15,1.00];
+var SOUNDS=['metronome','wood','deskbell','marimba','snap','digital'];
+var INTS=[0,3,5,8];
+var S={lang:null,tempo:{tot:1.30,ratio:3},sound:'metronome',cue:2,interval:3,flash:'on',seen:false};
+try{var sv=JSON.parse(localStorage.getItem('swingsnap')||'{}');for(var k in sv){if(k!=='clubs'&&k!=='club'&&k!=='auto')S[k]=sv[k]}if(!sv.tempo&&sv.clubs){var oc=sv.clubs[sv.club]||sv.clubs.iron;if(oc&&oc.tot&&oc.ratio)S.tempo={tot:oc.tot,ratio:oc.ratio}}}catch(e){}
+if(SOUNDS.indexOf(S.sound)<0)S.sound='metronome';
+if(INTS.indexOf(S.interval)<0)S.interval=INTS.reduce(function(a,b){return Math.abs(b-S.interval)<Math.abs(a-S.interval)?b:a});
+if(!S.tempo||!(S.tempo.tot>=0.9&&S.tempo.tot<=1.5)||!(S.tempo.ratio>=2&&S.tempo.ratio<=4))S.tempo={tot:1.30,ratio:3};
+if(!I18N[S.lang]){var nl=(navigator.language||'en').slice(0,2);S.lang=I18N[nl]?nl:'en'}
+function save(){try{localStorage.setItem('swingsnap',JSON.stringify(S))}catch(e){}}
+function t(k){return (I18N[S.lang]||I18N.en)[k]||I18N.en[k]||k}
+function cur(){return S.tempo}
+function bsplit(c){var b=c.tot*c.ratio/(c.ratio+1);return {b:b,d:c.tot-b}}
+function fmtR(r){return r.toFixed(1)}
+var running=false,curView='home';
+
+/* ---------- render ---------- */
+function setPressed(sel,fn){[].forEach.call(document.querySelectorAll(sel),function(b){b.setAttribute('aria-pressed',String(fn(b)))})}
+function render(){
+  document.documentElement.lang=S.lang;
+  [].forEach.call(document.querySelectorAll('[data-t]'),function(n){n.textContent=t(n.getAttribute('data-t'))});
+  var c=cur(),p=bsplit(c);
+  $('factTot').textContent=c.tot.toFixed(2);
+  $('factSplit').textContent=t('back')+' '+Math.round(p.b*1000)+' ms · '+t('down')+' '+Math.round(p.d*1000)+' ms';
+  $('factRatio').textContent=fmtR(c.ratio)+' : 1';
+  $('homeTip').textContent=t('homeTip');
+  $('autoHint').textContent=t('autoHint');$('autoHint').hidden=!motionSeen;
+  $('draftTot').textContent=c.tot.toFixed(2);$('draftSplit').textContent=Math.round(p.b*1000)+' / '+Math.round(p.d*1000)+' ms';
+  $('draftRatio').textContent=fmtR(c.ratio)+' : 1';
+  setPressed('[data-level]',function(b){return Math.abs(c.tot-LEVELS[+b.getAttribute('data-level')])<0.005});
+  setPressed('[data-preset]',function(b){return Math.abs(c.tot-LEVELS[+b.getAttribute('data-preset')])<0.005});
+  setPressed('[data-sound]',function(b){return b.getAttribute('data-sound')===S.sound});
+  setPressed('[data-cue]',function(b){return +b.getAttribute('data-cue')===S.cue});
+  setPressed('[data-int]',function(b){return +b.getAttribute('data-int')===S.interval});
+  setPressed('[data-flash]',function(b){return b.getAttribute('data-flash')===S.flash});
+  setPressed('[data-lang]',function(b){return b.getAttribute('data-lang')===S.lang});
+  $('accv-lang').textContent={en:'English',ja:'日本語',ko:'한국어'}[S.lang];
+  $('accv-sound').textContent=t('s_'+S.sound);
+  $('accv-cue').textContent=t('c'+S.cue);
+  $('accv-int').textContent=S.interval?S.interval+' '+t('sec'):t('nonstop');
+  $('accv-flash').textContent=S.flash==='on'?t('on'):t('off');
+  $('saveName').placeholder=t('namePh');
+  $('buyLink').href=S.lang==='ko'?'https://smartstore.naver.com/redstickgolf':'https://www.amazon.com/dp/B0FZKSFRWL';
+  $('logoLink').href=$('buyLink').href;
+  renderSaved();buildManual();syncSegs();
+}
+
+/* ---------- sliding segmented thumb ---------- */
+var segs=[].slice.call(document.querySelectorAll('.mode'));
+segs.forEach(function(c){var th=document.createElement('div');th.className='seg-thumb';c.insertBefore(th,c.firstChild);c._thumb=th;
+  new MutationObserver(function(){syncSeg(c)}).observe(c,{attributes:true,attributeFilter:['aria-pressed'],subtree:true})});
+function syncSeg(c){var on=c.querySelector('[aria-pressed="true"]'),th=c._thumb;
+  if(!c.offsetWidth)return;
+  if(!on){th.style.width='0px';return}
+  if(!c._ready){th.style.transition='none';c._ready=true}
+  th.style.width=on.offsetWidth+'px';th.style.transform='translateX('+on.offsetLeft+'px)';
+  if(th.style.transition==='none'){void th.offsetWidth;th.style.transition=''}}
+function syncSegs(){requestAnimationFrame(function(){segs.forEach(syncSeg)})}
+window.addEventListener('resize',syncSegs);
+
+/* ---------- tabs + views ---------- */
+var TABS=['home','measure','settings'],views={home:$('home'),measure:$('measure'),settings:$('settings')};
+var tabbarEl=$('tabbar'),tabInd=tabbarEl.querySelector('.tab-ind'),tabBtns=[].slice.call(tabbarEl.querySelectorAll('.tab'));
+function updateTabbar(){tabBtns.forEach(function(b){b.setAttribute('aria-selected',String(b.getAttribute('data-tab')===curView))});
+  var on=tabbarEl.querySelector('[aria-selected="true"]');if(on&&on.offsetWidth)tabInd.style.transform='translateX('+(on.offsetLeft+on.offsetWidth/2-15)+'px)'}
+function enter(el,dir){if(!el.animate)return;el.animate([{opacity:0,transform:'translateX('+(dir*28)+'px)'},{opacity:1,transform:'none'}],{duration:300,easing:'cubic-bezier(0.2,0.8,0.2,1)'})}
+function goTab(name){
+  if(running)end();
+  var from=TABS.indexOf(curView),to=TABS.indexOf(name);
+  curView=name;TABS.forEach(function(n){views[n].hidden=n!==name});
+  $('panel').scrollTop=0;if(to!==from)enter(views[name],to>from?1:-1);
+  $('saveMsg').textContent='';
+  updateTabbar();syncSegs();pvStart();
+}
+tabBtns.forEach(function(b){b.addEventListener('click',function(){goTab(b.getAttribute('data-tab'))})});
+window.addEventListener('resize',function(){requestAnimationFrame(updateTabbar)});
+
+/* ---------- settings accordion: one row open at a time ---------- */
+var accHeads=[].slice.call(document.querySelectorAll('.acc-h'));
+function setAcc(h,open){h.setAttribute('aria-expanded',String(open));h.parentElement.classList.toggle('open',open)}
+accHeads.forEach(function(h){h.addEventListener('click',function(){var open=h.getAttribute('aria-expanded')!=='true';accHeads.forEach(function(o){setAcc(o,false)});setAcc(h,open);if(open)setTimeout(function(){h.scrollIntoView({block:'nearest',behavior:'smooth'})},300)})});
+
+/* ---------- guide sheet ---------- */
+var manualEl=$('manual'),scrimEl=$('scrim');
+function buildManual(){
+  var b=$('manualBody');b.innerHTML='';
+  var q=document.createElement('div');q.className='man-quick';
+  var h=document.createElement('strong');h.className='howto-title';h.textContent=t('qTitle');q.appendChild(h);
+  var ol=document.createElement('ol');ol.className='steps';
+  t('q').forEach(function(txt,i){var li=document.createElement('li'),n=document.createElement('i');n.textContent=String(i+1);li.appendChild(n);li.appendChild(document.createTextNode(txt));ol.appendChild(li)});
+  q.appendChild(ol);b.appendChild(q);
+  t('m').forEach(function(it){var d=document.createElement('details'),s=document.createElement('summary'),c=document.createElement('div');s.textContent=it[0];c.className='man-c';c.textContent=it[1];d.appendChild(s);d.appendChild(c);b.appendChild(d)});
+}
+function openManual(){manualEl.hidden=false;scrimEl.hidden=false;$('manualBody').scrollTop=0}
+function closeManual(){manualEl.hidden=true;scrimEl.hidden=true;if(!S.seen){S.seen=true;save()}}
+$('manualRow').addEventListener('click',openManual);
+$('manualX').addEventListener('click',closeManual);scrimEl.addEventListener('click',closeManual);
+
+/* ---------- steppers (hold to repeat) ---------- */
+function hold(id,dir,kind){var el=$(id),tm=0,iv=0;
+  function step(){var c=cur();
+    if(kind==='r')c.ratio=Math.min(4,Math.max(2,Math.round((c.ratio+dir*0.1)*10)/10));
+    else c.tot=Math.min(1.5,Math.max(0.9,Math.round((c.tot+dir*0.01)*100)/100));
+    save();render();var tgt=$(kind==='r'?'draftRatio':'draftTot');tgt.classList.remove('tick');void tgt.offsetWidth;tgt.classList.add('tick')}
+  function down(e){e.preventDefault();step();tm=setTimeout(function(){iv=setInterval(step,kind==='r'?140:60)},400)}
+  function up(){clearTimeout(tm);clearInterval(iv)}
+  el.addEventListener('pointerdown',down);['pointerup','pointerleave','pointercancel'].forEach(function(n){el.addEventListener(n,up)})}
+hold('tMinus',-1,'t');hold('tPlus',1,'t');hold('rMinus',-1,'r');hold('rPlus',1,'r');
+
+/* ---------- saved tempos: up to 5, kept on this device only ---------- */
+var MAX_SAVED=5,saved=[];
+try{var svd=JSON.parse(localStorage.getItem('swingsnap-saved')||'[]');if(Array.isArray(svd))saved=svd.filter(function(x){return x&&x.tot>=0.9&&x.tot<=1.5&&x.ratio>=2&&x.ratio<=4&&typeof x.name==='string'}).slice(0,MAX_SAVED)}catch(e){}
+function persistSaved(){try{localStorage.setItem('swingsnap-saved',JSON.stringify(saved))}catch(e){}}
+function renderSaved(){
+  var list=$('savedList'),c=cur();list.textContent='';
+  $('savedCount').textContent=saved.length+' / '+MAX_SAVED;
+  if(!saved.length){var li0=document.createElement('li'),p0=document.createElement('p');p0.className='sv-empty';p0.textContent=t('noSaved');li0.appendChild(p0);list.appendChild(li0)}
+  saved.forEach(function(it,idx){
+    var li=document.createElement('li'),use=document.createElement('button');use.type='button';use.className='sv-use';
+    use.setAttribute('aria-pressed',String(Math.abs(c.tot-it.tot)<0.002&&Math.abs(c.ratio-it.ratio)<0.02));
+    var nm=document.createElement('b');nm.textContent=it.name;
+    var sub=document.createElement('span'),bk=it.tot*it.ratio/(it.ratio+1);
+    sub.textContent=it.tot.toFixed(2)+' '+t('sec')+' · '+it.ratio.toFixed(1)+' : 1 · '+Math.round(bk*1000)+' / '+Math.round((it.tot-bk)*1000)+' ms';
+    use.appendChild(nm);use.appendChild(sub);
+    use.onclick=function(){var cc=cur();cc.tot=it.tot;cc.ratio=it.ratio;save();$('saveMsg').textContent='';render()};
+    var del=document.createElement('button');del.type='button';del.className='sv-del';del.textContent=t('del');del.setAttribute('aria-label',t('del')+': '+it.name);
+    del.onclick=function(){saved.splice(idx,1);persistSaved();$('saveMsg').textContent='';renderSaved()};
+    li.appendChild(use);li.appendChild(del);list.appendChild(li);
+  });
+  $('saveAdd').style.opacity=saved.length>=MAX_SAVED?'0.5':'';
+}
+$('saveAdd').onclick=function(){
+  if(saved.length>=MAX_SAVED){$('saveMsg').textContent=t('fullMsg');return}
+  var input=$('saveName'),c=cur(),name=input.value.trim()||(t('defName')+(saved.length+1));
+  saved.push({name:name,tot:c.tot,ratio:c.ratio});persistSaved();input.value='';$('saveMsg').textContent=t('savedMsg');renderSaved();
+};
+$('practiceBtn').onclick=function(){goTab('home')};
+
+/* ---------- audio ---------- */
+var ac=null,bufs={},loading={},FALLBACK={metronome:'click',wood:'wood',deskbell:'bell',marimba:'bell',snap:'click',digital:'click'};
+function ctx(){if(!ac){var AC=window.AudioContext||window.webkitAudioContext;if(AC)ac=new AC()}if(ac&&ac.state==='suspended')ac.resume();return ac}
+function loadSounds(){
+  var c=ctx();if(!c)return;
+  SOUNDS.forEach(function(id){['start','impact'].forEach(function(r){
+    var key=id+'_'+r;if(bufs[key]||loading[key])return;loading[key]=true;
+    fetch('sounds/'+key+'.wav').then(function(x){return x.arrayBuffer()}).then(function(ab){return c.decodeAudioData(ab)}).then(function(b){bufs[key]=b}).catch(function(){loading[key]=false});
+  })});
+}
+function tone(when,kind,role){
+  var c=ctx();if(!c)return;
+  var b=null,rate=1,amp=1,fade=0;
+  if(role==='start')b=bufs[kind+'_start'];
+  else if(role==='top'){b=bufs[kind+'_start'];rate=0.8;amp=0.75;fade=0.26}
+  else if(role==='imp')b=bufs[kind+'_impact'];
+  if(!b){synth(when,FALLBACK[kind]||'click',role);return}
+  var src=c.createBufferSource(),g=c.createGain();src.buffer=b;src.playbackRate.value=rate;
+  src.connect(g);g.connect(c.destination);
+  g.gain.setValueAtTime(amp,when);
+  if(fade){g.gain.setValueAtTime(amp,when+0.02);g.gain.linearRampToValueAtTime(0.0001,when+fade)}
+  src.start(when);
+}
+function synth(when,kind,role){
+  var c=ctx();if(!c)return;
+  var f=kind==='wood'?[900,520,0.07,'triangle']:kind==='bell'?[1320,1320,0.5,'sine']:[1800,1200,0.05,'square'];
+  var m=role==='top'?0.8:role==='imp'?1.35:role==='tick'?0.45:1;
+  var g=c.createGain(),o=c.createOscillator();o.connect(g);g.connect(c.destination);
+  o.type=role==='tick'?'sine':f[3];
+  o.frequency.setValueAtTime(f[0]*m,when);o.frequency.exponentialRampToValueAtTime(Math.max(60,f[1]*m),when+f[2]);
+  var amp=role==='imp'?0.95:role==='tick'?0.3:role==='top'?0.45:0.6;
+  g.gain.setValueAtTime(0.0001,when);g.gain.exponentialRampToValueAtTime(amp,when+0.004);g.gain.exponentialRampToValueAtTime(0.0001,when+f[2]+0.06);
+  o.start(when);o.stop(when+f[2]+0.1);
+}
+function preview(){var c=ctx();if(!c)return;loadSounds();var n=c.currentTime+0.05;tone(n,S.sound,'start');if(S.cue===3)tone(n+0.3,S.sound,'top');tone(n+0.6,S.sound,'imp')}
+
+/* ---------- run ---------- */
+var raf=0,sched=0,swing0=0,nextIdx=0,P=null,flashed=-1,flashedT=-1,wake=null;
+var bar=$('bar');
+function setBar(p){bar.style.transform='translateY('+(p*(window.innerHeight-14)).toFixed(1)+'px)'}
+function ballHit(){var b=$('ball');b.classList.add('hit');setTimeout(function(){b.classList.remove('hit')},140)}
+function flash(){if(S.flash!=='on')return;var c=$('cue');if(c.animate)c.animate([{opacity:1},{opacity:0}],{duration:460,easing:'ease-out'})}
+function cycleStart(i){return swing0+i*(P.tot+P.gap)}
+function scheduler(){
+  var c=ctx();if(!c||!running)return;
+  while(cycleStart(nextIdx)<c.currentTime+1.5){
+    var s=cycleStart(nextIdx);
+    if(!(P.gap===0&&nextIdx>0))tone(s,S.sound,'start');   // non-stop: the previous impact sound is the start cue
+    if(S.cue===3)tone(s+P.b,S.sound,'top');
+    tone(s+P.tot,S.sound,'imp');
+    nextIdx++;
+  }
+}
+/* traffic light, same order as PuttSnap: hidden -> red -> yellow -> green (the swing starts) -> fades away */
+var lastLamp;
+function setLamp(l){
+  if(l===lastLamp)return;lastLamp=l;
+  var el=$('lights');el.classList.toggle('show',l!==null);
+  el.querySelector('.r').classList.toggle('on',l==='r');
+  el.querySelector('.y').classList.toggle('on',l==='y');
+  el.querySelector('.g').classList.toggle('on',l==='g');
+}
+function lampFor(rem){return rem>2?null:(rem>1?'r':'y')}   // rem = seconds until the next swing starts
+function loop(){
+  if(!running)return;var c=ctx();if(!c)return;var now=c.currentTime;
+  var p=0,lamp=null,hit=false;
+  if(now<swing0){lamp=lampFor(swing0-now)}
+  else{
+    var e=now-swing0,cyc=P.tot+P.gap,idx=Math.floor(e/cyc),w=e-idx*cyc;
+    if(w<P.b){p=w/P.b}
+    else if(w<P.tot){p=1-(w-P.b)/(P.tot-P.b);if(flashedT!==idx){flashedT=idx;flash()}}
+    else{p=0;lamp=lampFor(cyc-w);hit=w<P.tot+0.18;if(flashed!==idx){flashed=idx;ballHit()}}
+    if(P.gap===0&&idx>0&&w<0.18){hit=true;if(flashed!==idx){flashed=idx;ballHit()}}
+    if(w<P.tot&&w<0.6)lamp='g';
+  }
+  bar.classList.toggle('hit',hit);
+  setBar(p);setLamp(lamp);
+  raf=requestAnimationFrame(loop);
+}
+function begin(){
+  if(running)return;
+  var c=ctx();if(!c)return;
+  loadSounds();
+  var cc=cur(),sp=bsplit(cc);
+  P={tot:cc.tot,b:sp.b,gap:S.interval};
+  running=true;flashed=-1;flashedT=-1;nextIdx=0;liftOK=false;okSince=0;liftCount=0;
+  var t0=c.currentTime+0.3;
+  swing0=t0+3;
+  tone(t0,S.sound,'tick');tone(t0+1,S.sound,'tick');tone(t0+2,S.sound,'tick');
+  $('run').classList.add('on');
+  try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(function(w){wake=w}).catch(function(){})}catch(e){}
+  scheduler();sched=setInterval(scheduler,250);
+  raf=requestAnimationFrame(loop);
+}
+function end(){
+  if(!running)return;
+  running=false;cancelAnimationFrame(raf);clearInterval(sched);
+  $('run').classList.remove('on');setLamp(null);bar.classList.remove('hit');
+  if(wake){try{wake.release()}catch(e){}wake=null}
+  if(ac){try{ac.suspend()}catch(e){}}   // keep the context so decoded sounds stay loaded
+  armed=false;flatSince=0;pvStart();
+}
+$('go').onclick=function(){if(!running){ctx();begin()}};
+$('run').addEventListener('click',function(){end()});   // tap anywhere to stop, like PuttSnap
+document.addEventListener('visibilitychange',function(){if(document.hidden&&running)end()});
+
+/* ---------- auto start / stop (flat on the floor to start, lift to stop) ---------- */
+var armed=false,flatSince=0,liftCount=0,liftOK=true,okSince=0,motionSeen=false,motionBound=false;
+function needsPerm(){return typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'}
+function onMotion(e){
+  var g=e.accelerationIncludingGravity;
+  if(!motionSeen&&g&&g.z!=null){motionSeen=true;$('autoHint').hidden=false}
+  if(!g||g.z==null||document.hidden)return;
+  var x=g.x||0,y=g.y||0,z=g.z||0,mag=Math.sqrt(x*x+y*y+z*z);if(mag<1)return;
+  var tilt=Math.acos(Math.min(1,Math.abs(z)/mag))*180/Math.PI,dev=Math.abs(mag-9.81);
+  if(running){
+    if(!liftOK){if(tilt<8&&dev<0.9){var n1=performance.now();if(!okSince)okSince=n1;else if(n1-okSince>800){liftOK=true;okSince=0}}else okSince=0;return}
+    if(tilt>20||dev>4){liftCount++;if(liftCount>=3){liftCount=0;end()}}else liftCount=0;
+    return;
+  }
+  if(tilt>20){armed=true;flatSince=0;return}
+  var visible=curView==='home'&&manualEl.hidden;
+  if(!armed||!visible){flatSince=0;return}
+  if(tilt<8&&dev<0.9){var n2=performance.now();if(!flatSince)flatSince=n2;else if(n2-flatSince>1000){flatSince=0;armed=false;begin()}}else flatSince=0;
+}
+function bindMotion(){if(motionBound)return;motionBound=true;window.addEventListener('devicemotion',onMotion)}
+if(typeof DeviceMotionEvent!=='undefined'){bindMotion();if(needsPerm())document.addEventListener('pointerdown',function(){DeviceMotionEvent.requestPermission().then(function(){},function(){})},{once:true})}
+window.__swingsnap={onMotion:onMotion,bufs:bufs};
+
+/* ---------- home preview: the bar moves at the chosen tempo ---------- */
+var pvBar=$('pvBar'),pvTrack=$('pvTrack'),pvBall=$('pvBall'),pvBackEl=$('pvBack'),pvFwdEl=$('pvFwd'),pvRaf=0,pvT0=0;
+var reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function ease(x){return x<0.5?2*x*x:1-Math.pow(-2*x+2,2)/2}
+function pvOn(){return curView==='home'&&!running&&!document.hidden&&!reduced&&$('manual').hidden}
+function pvFrame(ts){
+  if(!pvOn()){pvRaf=0;return}
+  var c=cur(),sp=bsplit(c),cyc=c.tot+1.0,tt=((ts-pvT0)/1000)%cyc,y=0,hit=false,ph='';
+  if(tt<sp.b){y=ease(tt/sp.b);ph='b'}else if(tt<c.tot){y=1-ease((tt-sp.b)/sp.d);ph='f'}else{y=0;hit=tt<c.tot+0.18}
+  var travel=pvTrack.clientHeight-pvBar.offsetHeight;
+  pvBar.style.transform='translateY('+(y*travel)+'px)';
+  pvBar.classList.toggle('hit',hit);pvBall.classList.toggle('hit',hit);
+  pvTrack.classList.toggle('turn',tt>=sp.b&&tt<sp.b+0.16);
+  pvBackEl.classList.toggle('on',ph==='b');pvFwdEl.classList.toggle('on',ph==='f');
+  pvRaf=requestAnimationFrame(pvFrame);
+}
+function pvStart(){if(pvRaf||!pvOn())return;pvT0=performance.now();pvRaf=requestAnimationFrame(pvFrame)}
+document.addEventListener('visibilitychange',function(){if(!document.hidden)pvStart()});
+
+/* ---------- clicks: pick things ---------- */
+document.addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('button');if(!b)return;
+  var c=cur(),a;
+  if((a=b.getAttribute('data-level'))!==null||(a=b.getAttribute('data-preset'))!==null){c.tot=LEVELS[+a];save();render()}
+  else if(b.hasAttribute('data-sound')){S.sound=b.getAttribute('data-sound');save();render();preview()}
+  else if(b.hasAttribute('data-cue')){S.cue=+b.getAttribute('data-cue');save();render();preview()}
+  else if(b.hasAttribute('data-int')){S.interval=+b.getAttribute('data-int');save();render()}
+  else if(b.hasAttribute('data-flash')){S.flash=b.getAttribute('data-flash');save();render();if(S.flash==='on'){var cu=$('cue');if(cu.animate)cu.animate([{opacity:1},{opacity:0}],{duration:460,easing:'ease-out'})}}
+  else if(b.hasAttribute('data-lang')){S.lang=b.getAttribute('data-lang');save();render()}
+  var cd=e.target.closest&&e.target.closest('.snd');if(cd){cd.classList.remove('pop');void cd.offsetWidth;cd.classList.add('pop')}
+});
+document.addEventListener('pointerdown',function(){ctx();loadSounds()},{once:true});
+
+/* ---------- golf ball (~400 dimples on a sphere, same as PuttSnap) ---------- */
+(function buildBall(){
+  var N=400,DR=0.04,tilt=0.5,out=[];
+  for(var i=0;i<N;i++){
+    var y0=1-2*(i+0.5)/N,rr=Math.sqrt(1-y0*y0),th=i*2.399963,x=Math.cos(th)*rr,y1=y0,z1=Math.sin(th)*rr;
+    var y=y1*Math.cos(tilt)-z1*Math.sin(tilt),z=y1*Math.sin(tilt)+z1*Math.cos(tilt);
+    if(z<0.1)continue;
+    var sy=-y,ang=Math.atan2(sy,x)*180/Math.PI,rx=(DR*Math.max(z,0.15)).toFixed(4),ry=DR.toFixed(4);
+    var g='translate('+x.toFixed(4)+' '+sy.toFixed(4)+') rotate('+ang.toFixed(1)+')';
+    var gl='translate('+(x+0.011).toFixed(4)+' '+(sy+0.011).toFixed(4)+') rotate('+ang.toFixed(1)+')';
+    out.push('<ellipse transform="'+gl+'" rx="'+rx+'" ry="'+ry+'" fill="#fff" opacity="0.75"/>');
+    out.push('<ellipse transform="'+g+'" rx="'+rx+'" ry="'+ry+'" fill="#6b5f52" opacity="'+(0.16+0.1*z).toFixed(2)+'"/>');
+  }
+  var svg='<svg viewBox="-1 -1 2 2" aria-hidden="true"><defs>'+
+   '<radialGradient id="bBase" cx="0.4" cy="0.62" r="0.85"><stop offset="0" stop-color="#ffffff"/><stop offset="0.45" stop-color="#f5f1ea"/><stop offset="0.8" stop-color="#d8d1c6"/><stop offset="1" stop-color="#a39a8d"/></radialGradient>'+
+   '<radialGradient id="bShade" cx="0.4" cy="0.58" r="0.62"><stop offset="0.55" stop-color="#2a1f14" stop-opacity="0"/><stop offset="1" stop-color="#2a1f14" stop-opacity="0.5"/></radialGradient>'+
+   '<radialGradient id="bSpec" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff" stop-opacity="0.95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>'+
+   '</defs><circle r="1" fill="url(#bBase)"/>'+out.join('')+'<circle r="1" fill="url(#bShade)"/>'+
+   '<ellipse cx="-0.3" cy="0.32" rx="0.26" ry="0.12" transform="rotate(-24 -0.3 0.32)" fill="url(#bSpec)"/></svg>';
+  $('ball').insertAdjacentHTML('afterbegin',svg);
+})();
+
+/* ---------- start ---------- */
+render();updateTabbar();pvStart();
+(function(){var sp=$('splash');setTimeout(function(){if(!sp.animate){sp.remove();return}sp.animate([{opacity:1},{opacity:0}],{duration:380,easing:'ease-out',fill:'forwards'}).onfinish=function(){sp.remove()}},550)})();
+if(!S.seen)setTimeout(openManual,900);
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(function(){});
+})();
+</script>
+</body>
+</html>

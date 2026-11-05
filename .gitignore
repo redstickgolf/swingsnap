@@ -1,0 +1,5 @@
+# internal notes, research, backups and builds stay local
+CLAUDE.md
+docs/
+apk/
+index.before-*.html
