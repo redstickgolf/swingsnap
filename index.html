@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>SwingSnap</title>
-<meta name="theme-color" content="#0A0504">
+<meta name="theme-color" content="#121214">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -16,13 +16,13 @@
 @font-face{font-family:"Sora";font-style:normal;font-weight:600 800;font-display:swap;src:url("fonts/sora-latin.woff2") format("woff2")}
 /* Same look as PuttSnap: ink #0A0504, red #C8151D only as an accent, warm white #F4F1EC. Hairline borders, rounded cards, big numerals with small units,
    bottom tab bar, accordion settings. Running screen: the whole screen is the track, the bar runs edge to edge, the text layer is turned 90 degrees. */
-:root{--bg:#0A0504;--surface:#141010;--surface-2:#1A1514;--hair:rgba(244,241,236,.10);--hair-2:rgba(244,241,236,.20);--fg:#F4F1EC;--muted:#9C9692;--accent:#C8151D;--accent-hi:#CB181C;--accent-lo:#A8060A;--on-accent:#FFFFFF;--warm:#F4F1EC;--ball:84px;--r-btn:14px;--r-card:16px;
+:root{--bg:#121214;--surface:#1b1b1e;--surface-2:#232327;--hair:rgba(244,241,236,.10);--hair-2:rgba(244,241,236,.20);--fg:#F4F1EC;--muted:#9C9692;--accent:#C8151D;--accent-hi:#CB181C;--accent-lo:#A8060A;--on-accent:#FFFFFF;--warm:#F4F1EC;--ball:84px;--r-btn:14px;--r-card:16px;
   --font:system-ui,-apple-system,"Segoe UI",Roboto,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic","Hiragino Sans","Yu Gothic",sans-serif;
   --font-display:"Sora",system-ui,-apple-system,"Segoe UI",Roboto,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%;margin:0}
-body{background:radial-gradient(120% 70% at 50% 28%,#1a100f 0%,#0A0504 62%);color:var(--fg);font-family:var(--font);overflow:hidden;padding-block:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;overscroll-behavior:none;cursor:default}
+body{background:radial-gradient(120% 70% at 50% 28%,#2a2a2e 0%,#121214 62%);color:var(--fg);font-family:var(--font);overflow:hidden;padding-block:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;overscroll-behavior:none;cursor:default}
 .ball{position:fixed;z-index:1000;pointer-events:none;top:calc(-0.5 * var(--ball));left:50%;width:var(--ball);height:var(--ball);margin-left:calc(-0.5 * var(--ball));border-radius:50%;background:#ece8e1;box-shadow:0 0 0 1px rgba(255,255,255,.10),0 12px 28px rgba(0,0,0,.8);transition:transform .12s ease-out,box-shadow .12s ease-out}
 .ball svg{position:absolute;inset:0;width:100%;height:100%;display:block;border-radius:50%}
 .ball.hit{transform:translateY(5px) scale(1.06);box-shadow:0 0 0 4px rgba(200,21,29,.55),0 12px 28px rgba(0,0,0,.8)}
@@ -107,22 +107,27 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--fg);outline-offset:
 .secs-line{margin-top:-2px;color:var(--fg)}
 .preview{display:flex;align-items:center;justify-content:center;gap:14px}
 .pv-phone{position:relative;flex:none;width:92px;height:164px;padding:5px;border-radius:20px;border:1.5px solid var(--hair-2);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06)}
-.pv-track{position:relative;width:100%;height:100%;border-radius:15px;overflow:hidden;background:#0A0504;transition:box-shadow .15s}
-.pv-track.turn{box-shadow:inset 0 -30px 24px -16px rgba(200,21,29,.65)}
+.pv-track{position:relative;width:100%;height:100%;border-radius:15px;overflow:hidden;background:#121214;transition:box-shadow .15s}
+.pv-track.turn{box-shadow:inset 0 0 0 1px rgba(224,56,62,.55)}
 .pv-bar{position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(180deg,#DC2229,var(--accent-lo));box-shadow:0 0 14px rgba(200,21,29,.55);will-change:transform}
 .pv-bar.hit{background:var(--fg);box-shadow:0 0 14px rgba(244,241,236,.5)}
 .pv-ball{position:absolute;top:-12px;left:50%;width:24px;height:24px;margin-left:-12px;border-radius:50%;background:radial-gradient(circle at 40% 68%,#fff 0%,#ebe6de 52%,#b4ada3 100%);box-shadow:0 4px 8px rgba(0,0,0,.6);transition:transform .12s ease-out}
 .pv-ball.hit{transform:translateY(2px) scale(1.14)}
+.pv-turn{position:absolute;left:0;right:0;bottom:7px;padding:8px 0 3px;display:flex;flex-direction:column;align-items:center;gap:2px;font:700 11px/1 var(--font);letter-spacing:.04em;color:var(--muted);opacity:.55;border-top:1.5px dashed var(--hair-2);transition:opacity .15s,color .15s,background .15s}.pv-turn i{font-style:normal}.pv-turn i{display:inline-block;transition:transform .2s cubic-bezier(.34,1.56,.64,1),text-shadow .2s}.pv-turn.on{opacity:1;color:#fff;border-top-color:#E0383E;border-top-style:solid;box-shadow:0 -8px 14px -8px rgba(224,56,62,.7)}.pv-turn.on i{transform:scale(1.25);text-shadow:0 0 8px rgba(224,56,62,.95),0 0 16px rgba(224,56,62,.6)}.pv-turn.on svg{color:#E0383E;animation:pvpulse .4s ease-out}@keyframes pvpulse{0%{transform:scale(.6);opacity:.3}60%{transform:scale(1.4)}100%{transform:scale(1);opacity:1}}
 .pv-lab{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;font:600 11px/1.2 var(--font);letter-spacing:.04em;color:var(--muted);opacity:.45;transition:opacity .18s,color .18s;text-align:center}
 .pv-lab i{font-style:normal}
 .pv-lab svg{color:var(--accent)}
 .pv-lab.on{opacity:1;color:var(--fg)}
 .swing{position:relative;width:160px;height:100px;display:grid;place-items:center}
+.sw-dot{fill:#fff;filter:drop-shadow(0 0 4px rgba(224,56,62,.95));transition:r .15s}.sw-dot.pop{r:6.5}
 .swing svg{position:absolute;inset:0;width:100%;height:100%}
 .golfer{position:relative;display:block;height:84px;width:auto}
 .arc{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--muted);font:600 12px/1.3 var(--font);text-align:center;word-break:keep-all}
 @media (max-height:640px){.preview{display:none}}
 @media (max-height:560px){.arc{display:none}}
+/* tablets: the home screen is scaled up (phones are untouched); the practice screen is a separate overlay and is not affected */
+@media (min-width:700px) and (min-height:900px){.panel .home{zoom:1.35}}
+@media (min-width:700px) and (max-height:899px){.panel .home{zoom:1.08}}
 
 /* ---- tempo picker ---- */
 .stepper{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -163,7 +168,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--fg);outline-offset:
 .fine-note{margin:0;font-size:12px;line-height:1.6;color:var(--muted);word-break:keep-all}
 
 /* ---- tab bar ---- */
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:center;padding:8px max(12px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 8px) max(12px,env(safe-area-inset-left,0px));background:rgba(12,8,7,.82);-webkit-backdrop-filter:blur(22px) saturate(1.3);backdrop-filter:blur(22px) saturate(1.3);border-top:1px solid var(--hair)}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:center;padding:8px max(12px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 8px) max(12px,env(safe-area-inset-left,0px));background:rgba(18,18,20,.82);-webkit-backdrop-filter:blur(22px) saturate(1.3);backdrop-filter:blur(22px) saturate(1.3);border-top:1px solid var(--hair)}
 .tabbar-in{position:relative;display:flex;width:100%;max-width:420px}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:54px;padding:6px 0 2px;background:transparent;border:0;color:var(--muted);font:600 11px/1 var(--font);letter-spacing:.02em;cursor:pointer}
 .tab svg{display:block;transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
@@ -174,7 +179,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--fg);outline-offset:
 /* ---- guide sheet ---- */
 .scrim{position:fixed;inset:0;z-index:25;background:rgba(0,0,0,.6)}
 .sheet{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);z-index:30;max-width:420px;margin-inline:auto;padding:16px;border-radius:20px;background:rgba(28,22,21,.94);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid var(--hair-2);box-shadow:0 22px 54px rgba(0,0,0,.65);display:flex;flex-direction:column;gap:12px}
-.manual{background:#1c1615;-webkit-backdrop-filter:none;backdrop-filter:none;z-index:45;top:calc(env(safe-area-inset-top,0px) + 64px);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);max-width:560px;gap:12px;overflow:hidden}
+.manual{background:#202024;-webkit-backdrop-filter:none;backdrop-filter:none;z-index:45;top:calc(env(safe-area-inset-top,0px) + 64px);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);max-width:560px;gap:12px;overflow:hidden}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .howto-title{font:700 20px/1.2 var(--font-display)}
 .sheet-x{width:40px;height:40px;border-radius:12px;border:1px solid var(--hair-2);background:transparent;color:var(--fg);font:500 20px/1 var(--font);cursor:pointer;flex:none}
@@ -192,12 +197,12 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--fg);outline-offset:
 .man-c{padding:0 16px 14px;font:400 14px/1.75 var(--font);color:var(--fg);word-break:keep-all}
 
 /* ---- splash ---- */
-.splash{position:fixed;inset:0;z-index:3000;background:#0A0504;display:grid;place-items:center}
+.splash{position:fixed;inset:0;z-index:3000;background:#121214;display:grid;place-items:center}
 .splash img{height:36px;width:auto;animation:splashIn .7s cubic-bezier(.2,.8,.2,1) both}
 @keyframes splashIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
 
 /* ---- running screen ---- */
-#run{position:fixed;inset:0;z-index:40;display:none;overflow:hidden;background:radial-gradient(120% 70% at 50% 28%,#1a100f 0%,#0A0504 62%)}
+#run{position:fixed;inset:0;z-index:40;display:none;overflow:hidden;background:radial-gradient(120% 70% at 50% 28%,#2a2a2e 0%,#121214 62%)}
 #run.on{display:block}
 .bar{position:absolute;left:0;right:0;top:0;height:14px;background:linear-gradient(180deg,#DC2229 0%,var(--accent-lo) 100%);box-shadow:0 0 26px rgba(200,21,29,.5);will-change:transform;z-index:2}
 .bar.hit{background:var(--fg);box-shadow:0 0 26px rgba(244,241,236,.5)}
@@ -235,14 +240,16 @@ html:lang(ja) *{word-break:normal!important;overflow-wrap:anywhere;line-break:st
       <div class="swing">
         <svg viewBox="0 0 160 100" fill="none" stroke-linecap="round" aria-hidden="true">
           <defs><linearGradient id="dsw" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C8151D" stop-opacity=".15"/><stop offset="1" stop-color="#E0383E"/></linearGradient></defs>
-          <path d="M56 16 C6 26 22 96 79 87.8" stroke="url(#dsw)" stroke-width="3"/>
+          <path id="swp" d="M56 16 C6 26 22 96 79 87.8" stroke="url(#dsw)" stroke-width="3" opacity=".55"/>
+          <path id="swTrail" d="M56 16 C6 26 22 96 79 87.8" stroke="#E0383E" stroke-width="3.6" stroke-dasharray="0 400"/>
+          <circle id="swDot" class="sw-dot" r="4.2" cx="79" cy="87.8"/>
         </svg>
         <img class="golfer" src="img/golfer.png" alt="" height="84">
       </div>
     </div>
     <div class="preview" aria-hidden="true">
       <span id="pvBack" class="pv-lab"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg><i data-t="back"></i></span>
-      <div class="pv-phone"><div id="pvTrack" class="pv-track"><div id="pvBar" class="pv-bar"></div><div id="pvBall" class="pv-ball"></div></div></div>
+      <div class="pv-phone"><div id="pvTrack" class="pv-track"><div id="pvBar" class="pv-bar"></div><div id="pvBall" class="pv-ball"></div><div id="pvTurn" class="pv-turn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 8l4-4 4 4M12 4v16M8 16l4 4 4-4"/></svg><i data-t="turn"></i></div></div></div>
       <span id="pvFwd" class="pv-lab"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg><i data-t="down"></i></span>
     </div>
     <div class="facts2"><div class="fact"><span class="fl" data-t="totL"></span><div><strong id="factTot">1.30</strong><span class="u" data-t="sec"></span></div></div></div>
@@ -396,7 +403,7 @@ html:lang(ja) *{word-break:normal!important;overflow-wrap:anywhere;line-break:st
 var I18N={
 en:{sec:'sec',start:'START',stop:'Stop',tabP:'Practice',tabT:'Tempo',tabS:'Settings',
  lv_gen:'General',lv_adv:'Advanced',lv_pro:'Pro avg. (ref.)',
- back:'Backswing',down:'Downswing',def:'Backswing = start to top · Downswing = top to impact',
+ back:'Backswing',down:'Downswing',turn:'Transition',def:'Backswing = start to top · Downswing = top to impact',
  homeTip:'Place the phone where a club cannot hit it.',
  autoHint:'Lay the phone flat to start automatically',
  totL:'Total time',ratioL:'Ratio',
@@ -425,7 +432,7 @@ en:{sec:'sec',start:'START',stop:'Stop',tabP:'Practice',tabT:'Tempo',tabS:'Setti
  ['Safety','Place the phone out of the club path, take it easy, stop if anything hurts. Not medical advice.']]},
 ko:{sec:'초',start:'시작',stop:'정지',tabP:'연습',tabT:'템포',tabS:'설정',
  lv_gen:'일반',lv_adv:'상급',lv_pro:'프로 평균(참고)',
- back:'백스윙',down:'다운스윙',def:'백스윙 = 시작~탑 · 다운스윙 = 탑~임팩트',
+ back:'백스윙',down:'다운스윙',turn:'전환',def:'백스윙 = 시작~탑 · 다운스윙 = 탑~임팩트',
  homeTip:'클럽이 닿지 않는 곳에 폰을 두세요.',
  autoHint:'폰을 바닥에 평평하게 놓으면 자동으로 시작해요',
  totL:'전체 시간',ratioL:'비율',
@@ -454,7 +461,7 @@ ko:{sec:'초',start:'시작',stop:'정지',tabP:'연습',tabT:'템포',tabS:'설
  ['안전','폰은 클럽이 닿지 않는 곳에 두고, 무리하지 말고, 아프면 멈추세요. 의학 조언이 아닙니다.']]},
 ja:{sec:'秒',start:'スタート',stop:'ストップ',tabP:'練習',tabT:'テンポ',tabS:'設定',
  lv_gen:'一般',lv_adv:'上級',lv_pro:'プロ平均(参考)',
- back:'バックスイング',down:'ダウンスイング',def:'バックスイング＝始動〜トップ ・ ダウンスイング＝トップ〜インパクト',
+ back:'バックスイング',down:'ダウンスイング',turn:'切り返し',def:'バックスイング＝始動〜トップ ・ ダウンスイング＝トップ〜インパクト',
  homeTip:'クラブが当たらない場所にスマホを置いてください。',
  autoHint:'スマホを平らに置くと自動で始まります',
  totL:'合計時間',ratioL:'比率',
@@ -750,7 +757,7 @@ if(typeof DeviceMotionEvent!=='undefined'){bindMotion();if(needsPerm())document.
 window.__swingsnap={onMotion:onMotion,bufs:bufs};
 
 /* ---------- home preview: the bar moves at the chosen tempo ---------- */
-var pvBar=$('pvBar'),pvTrack=$('pvTrack'),pvBall=$('pvBall'),pvBackEl=$('pvBack'),pvFwdEl=$('pvFwd'),pvRaf=0,pvT0=0;
+var pvBar=$('pvBar'),pvTrack=$('pvTrack'),pvBall=$('pvBall'),pvBackEl=$('pvBack'),swP=$('swp'),swTrail=$('swTrail'),swDot=$('swDot'),swL=0,pvTurnEl=$('pvTurn'),pvFwdEl=$('pvFwd'),pvRaf=0,pvT0=0;
 var reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 function ease(x){return x<0.5?2*x*x:1-Math.pow(-2*x+2,2)/2}
 function pvOn(){return curView==='home'&&!running&&!document.hidden&&!reduced&&$('manual').hidden}
@@ -761,8 +768,12 @@ function pvFrame(ts){
   var travel=pvTrack.clientHeight-pvBar.offsetHeight;
   pvBar.style.transform='translateY('+(y*travel)+'px)';
   pvBar.classList.toggle('hit',hit);pvBall.classList.toggle('hit',hit);
-  pvTrack.classList.toggle('turn',tt>=sp.b&&tt<sp.b+0.16);
+  pvTrack.classList.toggle('turn',tt>=sp.b&&tt<sp.b+0.16);pvTurnEl.classList.toggle('on',tt>=sp.b-0.05&&tt<sp.b+0.4);
   pvBackEl.classList.toggle('on',ph==='b');pvFwdEl.classList.toggle('on',ph==='f');
+  if(!swL)swL=swP.getTotalLength();
+  var pos=ph==='b'?swL*(1-ease(tt/sp.b)):ph==='f'?swL*ease((tt-sp.b)/sp.d):swL,pt=swP.getPointAtLength(pos),tl=26,st=ph==='b'?pos:Math.max(0,pos-tl),ln=ph==='b'?Math.min(tl,swL-pos):Math.min(tl,pos);
+  swDot.setAttribute('cx',pt.x);swDot.setAttribute('cy',pt.y);swDot.classList.toggle('pop',tt>=sp.b-0.05&&tt<sp.b+0.4);
+  swTrail.style.strokeDasharray=ph===''?'0 400':ln+' 400';swTrail.style.strokeDashoffset=-st;
   pvRaf=requestAnimationFrame(pvFrame);
 }
 function pvStart(){if(pvRaf||!pvOn())return;pvT0=performance.now();pvRaf=requestAnimationFrame(pvFrame)}
