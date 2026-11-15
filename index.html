@@ -405,7 +405,7 @@ en:{sec:'sec',start:'START',stop:'Stop',tabP:'Practice',tabT:'Tempo',tabS:'Setti
  lv_gen:'General',lv_adv:'Advanced',lv_pro:'Tour avg.',
  back:'Backswing',down:'Downswing',turn:'Transition',def:'Backswing = start to top · Downswing = top to impact',
  homeTip:'Place the phone where a club cannot hit it.',
- autoHint:'Lay the phone flat to start automatically',
+ autoHint:'Lay the phone flat to start automatically',autoHintS:'Lay flat to auto-start',
  totL:'Total time',ratioL:'Ratio',
  totP:'Start of swing to impact. Hold + or − to change quickly. Your setting is remembered.',
  ratioP:'Backswing : downswing. 3:1 is a commonly used reference; measured ratios vary by player and method. With 2 beats the ratio only sets where the bar turns.',
@@ -434,7 +434,7 @@ ko:{sec:'초',start:'시작',stop:'정지',tabP:'연습',tabT:'템포',tabS:'설
  lv_gen:'일반',lv_adv:'상급',lv_pro:'투어 평균',
  back:'백스윙',down:'다운스윙',turn:'전환',def:'백스윙 = 시작~탑 · 다운스윙 = 탑~임팩트',
  homeTip:'클럽이 닿지 않는 곳에 폰을 두세요.',
- autoHint:'폰을 바닥에 평평하게 놓으면 자동으로 시작해요',
+ autoHint:'폰을 바닥에 평평하게 놓으면 자동으로 시작해요',autoHintS:'평평하게 놓으면 자동 시작해요',
  totL:'전체 시간',ratioL:'비율',
  totP:'스윙 시작부터 임팩트까지. +/−를 누르고 있으면 빠르게 바뀝니다. 설정은 기억돼요.',
  ratioP:'백스윙 : 다운스윙. 3:1은 흔히 쓰는 기준일 뿐이고, 실제 측정 비율은 사람과 측정 방법에 따라 다릅니다. 2박일 때는 화면 바가 방향을 바꾸는 지점만 정합니다.',
@@ -463,7 +463,7 @@ ja:{sec:'秒',start:'スタート',stop:'ストップ',tabP:'練習',tabT:'テ�
  lv_gen:'一般',lv_adv:'上級',lv_pro:'ツアー平均',
  back:'バックスイング',down:'ダウンスイング',turn:'切り返し',def:'バックスイング＝始動〜トップ ・ ダウンスイング＝トップ〜インパクト',
  homeTip:'クラブが当たらない場所にスマホを置いてください。',
- autoHint:'スマホを平らに置くと自動で始まります',
+ autoHint:'スマホを平らに置くと自動で始まります',autoHintS:'平らに置くと自動で開始',
  totL:'合計時間',ratioL:'比率',
  totP:'始動からインパクトまで。+/−を長押しで素早く変更。設定は保存されます。',
  ratioP:'バックスイング：ダウンスイング。3:1はよく使われる目安で、実測の比は人や測定方法で異なります。2拍のときはバーが折り返す位置だけが変わります。',
@@ -770,6 +770,8 @@ function fitHome(){
     homeEl.style.setProperty('--pvh',Math.max(110,164-Math.ceil(over))+'px');
     return overBy()<=0.5;
   }
+  var ah=$('autoHint');   // only when the full sentence would wrap (small screens) use the short one
+  if(ah&&!ah.hidden){ah.textContent=t('autoHint');if(ah.getBoundingClientRect().height>parseFloat(getComputedStyle(ah).lineHeight||0)*1.5+4)ah.textContent=t('autoHintS')}
   homeEl.classList.remove('compact','small','tiny');
   if(sizePhone())return;
   homeEl.classList.add('compact');
