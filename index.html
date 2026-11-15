@@ -550,9 +550,9 @@ es:{sec:'s',start:'EMPEZAR',stop:'Parar',tabP:'Práctica',tabT:'Tempo',tabS:'Aju
  qTitle:'Cómo se usa',
  q:['Deja el teléfono plano en el suelo, o apóyalo donde el palo no llegue. Sube el volumen.','Pulsa Empezar o simplemente deja el teléfono plano: arranca solo. Levántalo para parar.','Sigue el ritmo: suena al inicio y en el impacto (y en el top si eliges 3 sonidos). No hace falta clavar el último sonido.','Mira el semáforo: rojo, amarillo y verde. Con el verde arranca el siguiente swing.'],
  m:[['¿Qué es el tempo?','Es cómo se reparte el tiempo en tu swing: cuánto tardas desde el inicio hasta el impacto y cómo se divide ese tiempo entre la subida (backswing) y la bajada (downswing).'],
- ['Tiempo total y proporción','Con un total de 1,30 s y proporción 3:1, la subida dura unos 0,98 s y la bajada unos 0,33 s. La proporción solo indica cómo se reparte el tiempo.'],
+ ['Tiempo total y proporción','Con un total de 1.30 s y proporción 3:1, la subida dura unos 0.98 s y la bajada unos 0.33 s. La proporción solo indica cómo se reparte el tiempo.'],
  ['¿Desde dónde hasta dónde?','En esta app, la subida va del inicio del swing al top, y la bajada, del top al impacto. Otros estudios y otras apps lo definen de otra manera, así que las cifras no se pueden comparar directamente.'],
- ['¿El 3:1 es lo correcto?','No. Es solo una referencia habitual. En mediciones con jugadores de alto nivel, la proporción iba aproximadamente de 2,4 a 3,4, y cambia según el estudio y el método.'],
+ ['¿El 3:1 es lo correcto?','No. Es solo una referencia habitual. En mediciones con jugadores de alto nivel, la proporción iba aproximadamente de 2.4 a 3.4, y cambia según el estudio y el método.'],
  ['¿Cuanto más rápido, mejor?','No. En un estudio, el jugador con la bajada más rápida no era el que más velocidad de palo tenía. Usa un ritmo que puedas repetir con comodidad.'],
  ['¿Cambia el tempo con cada palo?','En estudios pequeños con jugadores de buen nivel, el tiempo total y el de la bajada fueron casi iguales con driver, hierros y wedges. Por eso la app usa un único ajuste para todos los palos; cámbialo si tu swing es distinto.'],
  ['Qué hace y qué no hace esta app','Reproduce un ritmo constante para practicar. No mide ni evalúa tu swing, y no promete más distancia ni más precisión.'],
@@ -578,9 +578,9 @@ de:{sec:'s',start:'START',stop:'Stopp',tabP:'Üben',tabT:'Tempo',tabS:'Einstellu
  qTitle:'So geht\u2019s',
  q:['Leg das Handy flach auf den Boden oder stell es dort auf, wo der Schläger nicht hinkommt. Dreh die Lautstärke auf.','Tippe auf Start oder leg das Handy einfach flach hin: Es startet von selbst. Zum Stoppen hebst du es wieder auf.','Schwing im Rhythmus: Es ertönt ein Ton beim Schwungbeginn und im Treffmoment (bei 3 Tönen auch am Umkehrpunkt). Du musst den letzten Ton nicht auf die Millisekunde treffen.','Achte auf die Ampel: Rot, Gelb, Grün. Bei Grün beginnt der nächste Schwung.'],
  m:[['Was ist das Schwungtempo?','Das Tempo beschreibt die zeitliche Aufteilung deines Schwungs: wie lange er vom Schwungbeginn bis zum Treffmoment dauert und wie sich diese Zeit auf Rückschwung und Abschwung verteilt.'],
- ['Gesamtdauer und Verhältnis','1,30 s Gesamtdauer bei einem Verhältnis von 3:1 heißt: etwa 0,98 s Rückschwung und 0,33 s Abschwung. Das Verhältnis sagt nur, wie die Zeit aufgeteilt ist.'],
+ ['Gesamtdauer und Verhältnis','1.30 s Gesamtdauer bei einem Verhältnis von 3:1 heißt: etwa 0.98 s Rückschwung und 0.33 s Abschwung. Das Verhältnis sagt nur, wie die Zeit aufgeteilt ist.'],
  ['Von wo bis wo wird gemessen?','In dieser App reicht der Rückschwung vom Schwungbeginn bis zum Umkehrpunkt und der Abschwung vom Umkehrpunkt bis zum Treffmoment. Andere Studien und Apps definieren das anders, deshalb lassen sich die Zahlen nicht direkt vergleichen.'],
- ['Ist 3:1 das richtige Verhältnis?','Nein. Es ist nur ein gängiger Richtwert. Bei Messungen an sehr guten Spielern lag das Verhältnis etwa zwischen 2,4 und 3,4, und es unterscheidet sich je nach Studie und Methode.'],
+ ['Ist 3:1 das richtige Verhältnis?','Nein. Es ist nur ein gängiger Richtwert. Bei Messungen an sehr guten Spielern lag das Verhältnis etwa zwischen 2.4 und 3.4, und es unterscheidet sich je nach Studie und Methode.'],
  ['Je schneller, desto besser?','Nein. In einer Studie hatte der Spieler mit dem schnellsten Abschwung nicht die höchste Schlägerkopfgeschwindigkeit. Übe in einem Tempo, das du locker wiederholen kannst.'],
  ['Ändert sich das Tempo je nach Schläger?','In kleinen Studien mit guten Spielern waren Gesamtdauer und Abschwungzeit bei Driver, Eisen und Wedges nahezu gleich. Deshalb gibt es hier eine Einstellung für alle Schläger; passe sie an, wenn du anders schwingst.'],
  ['Was die App kann und was nicht','Sie gibt dir einen gleichmäßigen Rhythmus zum Üben vor. Sie misst und bewertet deinen Schwung nicht und verspricht weder mehr Länge noch mehr Präzision.'],
@@ -601,7 +601,7 @@ function t(k){return (I18N[S.lang]||I18N.en)[k]||I18N.en[k]||k}
 function cur(){return S.tempo}
 function bsplit(c){var b=c.tot*c.ratio/(c.ratio+1);return {b:b,d:c.tot-b}}
 function fmtR(r){return r.toFixed(1)}
-function dc(v){return (S.lang==='es'||S.lang==='de')?String(v).replace(/\./g,','):String(v)}
+function dc(v){return String(v)}
 function fmtS(x){var u=t('sec');return dc(x.toFixed(2))+(/[a-z]/i.test(u)?' ':'')+u}
 function fmtN(r){return dc(Math.abs(r-Math.round(r))<0.005?String(Math.round(r)):r.toFixed(1))}
 var running=false,curView='home';
