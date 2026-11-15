@@ -34,7 +34,7 @@ body{background:radial-gradient(120% 70% at 50% 28%,#2a2a2e 0%,#121214 62%);colo
 .topbar{display:flex;align-items:center;justify-content:space-between;min-height:46px}
 .home>.mode{margin-top:6px}
 .home>.arc{margin-top:auto}.home>.preview{margin-top:auto}
-.home>.go{margin-top:auto}
+.home>.auto-hint{margin-top:auto}.home>.go{margin-top:-2px}.home>.auto-hint[hidden]+.go{margin-top:auto}
 .measure>.go{margin-top:auto}
 .head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 h1,h2{margin:0;font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:-.015em}
@@ -67,7 +67,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--fg);outline-offset:
 .sv-use span{font:500 12px var(--font);color:var(--muted);font-variant-numeric:tabular-nums}
 .sv-del{min-width:52px;min-height:52px;border-radius:var(--r-btn);border:1px solid var(--hair-2);background:transparent;color:var(--muted);font:600 13px var(--font);cursor:pointer}
 .sv-empty{margin:0;font-size:13px;color:var(--muted)}
-.auto-hint{margin:0;text-align:center;font:700 15px/1.4 var(--font);color:var(--warm);display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 14px;border-radius:14px;border:1px solid rgba(200,21,29,.6);background:rgba(200,21,29,.14);word-break:keep-all;text-wrap:balance;animation:hintGlow 1.8s ease-in-out infinite}
+.auto-hint{margin:0;text-align:center;font:600 14px/1.4 var(--font);color:#D9D3CD;display:flex;align-items:center;justify-content:center;gap:9px;padding:2px 0;word-break:keep-all;text-wrap:balance}
 .auto-hint::before{content:"";flex:none;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px rgba(200,21,29,.9)}
 @keyframes hintGlow{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(200,21,29,0)}50%{opacity:.6;box-shadow:0 0 20px 2px rgba(200,21,29,.5)}}
 @media (prefers-reduced-motion:reduce){.auto-hint{animation:none}}
@@ -515,7 +515,7 @@ function render(){
   $('factTot').textContent=c.tot.toFixed(2);
   $('factSplit').textContent=t('back')+' '+Math.round(p.b*1000)+' ms · '+t('down')+' '+Math.round(p.d*1000)+' ms';
   $('factRatio').textContent=fmtR(c.ratio)+' : 1';
-  $('autoHint').textContent=t('autoHint');$('autoHint').hidden=!motionSeen;
+  $('autoHint').textContent=t('autoHint');$('autoHint').hidden=typeof DeviceMotionEvent==='undefined';
   $('draftTot').textContent=c.tot.toFixed(2);$('draftSplit').textContent=Math.round(p.b*1000)+' / '+Math.round(p.d*1000)+' ms';
   $('draftRatio').textContent=fmtR(c.ratio)+' : 1';
   setPressed('[data-level]',function(b){return Math.abs(c.tot-LEVELS[+b.getAttribute('data-level')])<0.005});
